@@ -12,6 +12,8 @@ public class _TestPackage extends TestCase {
 		TestSuite suite = new TestSuite();
 		suite.addTestSuite(com.silverdirk.parser._TestParser.class);
 		suite.addTestSuite(com.silverdirk.parser._TestTableBuilder.class);
+		suite.addTestSuite(com.silverdirk.parser._TestScanRuleSet.class);
+		suite.addTestSuite(com.silverdirk.parser._TestScanner.class);
 		return suite;
 	}
 }
