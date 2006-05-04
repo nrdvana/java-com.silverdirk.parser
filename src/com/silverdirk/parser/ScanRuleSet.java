@@ -23,7 +23,7 @@ public class ScanRuleSet {
 		buildSwitchTable();
 	}
 
-	public ScanRule[] getRulesFor(String str) {
+	public ScanRule[] getRulesFor(CharSequence str) {
 		char firstChar= str.charAt(0);
 		int low= 0, high= switchLookup.length;
 		while (high-low > 1) {

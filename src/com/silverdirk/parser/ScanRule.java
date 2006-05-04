@@ -22,9 +22,9 @@ public class ScanRule {
 		this.stateTrans= stateTrans;
 	}
 
-    public ScanRule(Pattern regex, Object token) {
+	public ScanRule(Pattern regex, Object token) {
 		this((Object)regex, token, NO_STATE_TRANS);
-    }
+	}
 	public ScanRule(String word, Object token) {
 		this((Object)word, token, NO_STATE_TRANS);
 	}
@@ -68,19 +68,22 @@ public class ScanRule {
 		}
 	}
 
-	public ScanMatch getMatch(String source) {
+	public ScanMatch getMatch(CharSequence source) {
 		Object token= null;
 		int charsConsumed= 0;
 		if (matchTarget instanceof Character) {
 			if (source.charAt(0) == ((Character)matchTarget).charValue()) {
-				token= onMatch(source.substring(0, 1));
+				token= onMatch(source.subSequence(0, 1).toString());
 				charsConsumed= 1;
 			}
 		}
 		else if (matchTarget instanceof String) {
-			if (source.startsWith((String)matchTarget)) {
-				token= onMatch((String)matchTarget);
-				charsConsumed= ((String)matchTarget).length();
+			String str= (String) matchTarget;
+			if (source.length() >= str.length()
+				&& str.equals(source.subSequence(0, str.length()).toString()))
+			{
+				token= onMatch(str);
+				charsConsumed= str.length();
 			}
 		}
 		else if (matchTarget instanceof Pattern) {

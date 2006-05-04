@@ -15,9 +15,9 @@ public class Scanner implements TokenSource {
 	int pos= 0;
 	int lastPos= 0;
 	Object token;
-	String data;
+	CharSequence data;
 
-	public Scanner(ScanRuleSet[] stateRuleSets, String data) {
+	public Scanner(ScanRuleSet[] stateRuleSets, CharSequence data) {
 		states= stateRuleSets;
 		this.data= data;
 		next();
@@ -39,7 +39,7 @@ public class Scanner implements TokenSource {
 				return;
 			}
 			ScanRuleSet curState= states[state];
-			String bufferTail= data.substring(pos, data.length());
+			CharSequence bufferTail= data.subSequence(pos, data.length());
 			ScanRule[] options= curState.getRulesFor(bufferTail);
 			boolean success= false;
 			for (int i=0; i<options.length; i++) {
@@ -58,6 +58,6 @@ public class Scanner implements TokenSource {
 	}
 
 	public String getContext() {
-		return data.substring(Math.max(0, pos-50), 100);
+		return data.subSequence(Math.max(0, pos-50), pos+50).toString();
 	}
 }
