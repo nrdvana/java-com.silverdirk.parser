@@ -12,42 +12,16 @@ import java.util.*;
  * @version $Revision$
  */
 public class Parser {
-	Nonterminal start;
-	HashMap[] actionTable;
-	HashMap[] gotoTable;
-
-	public Parser(Nonterminal startSymbol, ParseRule[] rules, Priorities priorities) {
-		start= startSymbol;
-		buildTable(rules, priorities);
-	}
+	ParseRule[] rules;
+	LR1_Table table;
 
 	public Parser(Grammar g) {
-		start= g.start;
-		buildTable(g.rules, g.priorities);
+		this(g, new LR1_Table(g));
 	}
 
-	public Parser(Nonterminal startSymbol, Collection rules, Priorities priorities) {
-		ParseRule[] ruleArray= (ParseRule[]) rules.toArray(new ParseRule[rules.size()]);
-		start= startSymbol;
-		buildTable(ruleArray, priorities);
-	}
-
-	public Nonterminal getStartSymbol() {
-		return start;
-	}
-
-	private void buildTable(ParseRule[] ruleArray, Priorities priorities) {
-		TableBuilder.Tables t= TableBuilder.generate(start, ruleArray, priorities);
-		if (t.conflicts.size() > 0) {
-			StringBuffer conflictList= new StringBuffer();
-			conflictList.append("Grammar has conflicts:\n");
-			for (Iterator itr= t.conflicts.iterator(); itr.hasNext();) {
-				conflictList.append(itr.next()).append('\n');
-			}
-			throw new RuntimeException(conflictList.toString());
-		}
-		actionTable= t.actionTable;
-		gotoTable= t.gotoTable;
+	public Parser(Grammar g, LR1_Table precompiledTable) {
+		rules= g.rules;
+		table= precompiledTable;
 	}
 
 	public Object parse(TokenSource input) throws ParseException {
@@ -79,7 +53,7 @@ public class Parser {
 				break;
 			case ParseAction.REDUCE:
 			case ParseAction.ACCEPT:
-				ParseRule rule= action.rule;
+				ParseRule rule= rules[action.rule];
 				SourcePos pos= new SourcePos();
 				Object[] symbols= new Object[rule.symbols.length];
 				if (symbols.length > 0) {

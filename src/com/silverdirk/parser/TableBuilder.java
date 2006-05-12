@@ -1,8 +1,8 @@
 package com.silverdirk.parser;
 
 import java.util.*;
-import com.silverdirk.parser.Parser$ParseAction;
 import com.silverdirk.parser.Parser$Priorities;
+import com.silverdirk.parser.Parser$ParseAction;
 
 /**
  * <p>Project: 42</p>
