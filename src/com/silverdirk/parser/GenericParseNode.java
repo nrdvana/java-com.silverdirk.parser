@@ -19,4 +19,14 @@ public class GenericParseNode {
 		this.from= from;
 		this.components= symbols;
 	}
+
+	public String toString() {
+		StringBuffer result= new StringBuffer(type.toString()).append('(');
+		if (components != null && components.length > 0) {
+			for (int i=0; i<components.length; i++)
+				result.append(components[i]).append(", ");
+			result.setLength(result.length()-2);
+		}
+		return result.append(')').toString();
+	}
 }

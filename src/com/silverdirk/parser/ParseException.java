@@ -11,14 +11,14 @@ package com.silverdirk.parser;
  */
 public class ParseException extends Exception {
 	public ParseException(String msg, String source, SourcePos loc) {
-		super(msg);
-		location= loc;
-		this.source= source;
+		this(msg, source, null, null, loc);
 	}
-	public ParseException(String msg, String source, Object[] expectedList, SourcePos loc) {
-		this(msg, source, loc);
-		if (expectedList.length > 0)
-			this.expectedList= expectedList;
+	public ParseException(String msg, String source, Parser.ParseState[] parseStack, Object[] expected, SourcePos loc) {
+		super(msg);
+		this.source= source;
+		this.location= loc;
+		this.stack= parseStack;
+		this.expectedList= expected;
 	}
 
 	public SourcePos getLocation() {
@@ -30,22 +30,34 @@ public class ParseException extends Exception {
 	}
 
 	public String getParserMsg() {
-		return getMessage()+" on "+getLocation()+" while looking for: "+getExpectationStr();
+		String result= getMessage()+" at "+getLocation();
+		if (stack != null)
+			result+="\n Had: "+getStackString();
+		if (expectedList != null)
+			result+="\n Expecting: "+getExpectationStr();
+		return result;
+	}
+
+	public String getStackString() {
+		StringBuffer result= new StringBuffer().append("{\n    ");
+		for (int i=0; i<stack.length; i++)
+			result.append(stack[i].data).append("\n    ");
+		if (expectedList.length > 0)
+			result.replace(result.length()-3, result.length()-1, "}");
+		return result.toString();
 	}
 
 	public String getExpectationStr() {
 		StringBuffer expect= new StringBuffer();
-		if (expectedList != null) {
-			if (expectedList.length > 0) {
-				expect.append(expectedList[0]);
-				for (int i=1; i<expectedList.length; i++)
-					expect.append(" ").append(expectedList[i]);
-			}
-		}
+		for (int i=0; i<expectedList.length; i++)
+			expect.append(expectedList[i]).append(' ');
+		if (expectedList.length > 0)
+			expect.deleteCharAt(expect.length()-1);
 		return expect.toString();
 	}
 
 	Object[] expectedList= null;
+	Parser.ParseState[] stack;
 	SourcePos location;
 	String source;
 }
