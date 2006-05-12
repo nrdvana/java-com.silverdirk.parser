@@ -28,14 +28,21 @@ public class AutoConstructor implements Parser.ProductionHandler {
 			new Class[] {ParseRule.class, Object[].class},
 			new Class[] {ParseRule.class, SourcePos.class, Object[].class}
 		};
-		for (int i=paramOptions.length-1; i>=0; i--)
-			try {
-				cons= targetClass.getConstructor(paramOptions[i]);
-				consType= i;
-				return;
+		Constructor[] consList= targetClass.getConstructors();
+		for (int type=paramOptions.length-1; type>=0; type--) {
+			consLoop:
+			for (int consIdx= 0; consIdx<consList.length; consIdx++) {
+				Class[] params= consList[consIdx].getParameterTypes();
+				if (params.length == paramOptions[type].length) {
+					for (int i=0; i<params.length; i++)
+						if (params[i] != paramOptions[type][i])
+							continue consLoop;
+					cons= consList[consIdx];
+					consType= type;
+					return;
+				}
 			}
-			catch (NoSuchMethodException nsmex2) {
-			}
+		}
 		throw new RuntimeException("Class "+targetClass.getName()+" has no valid constructor for making reductions.");
 	}
 
