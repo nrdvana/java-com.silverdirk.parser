@@ -17,20 +17,19 @@ public class TableBuilder {
 	Nonterminal start;
 	ParseRule[] rules;
 	Priorities priorities;
-	HashMap rulePriCache= new HashMap();
 	HashMap productionMap= new HashMap();
 	HashMap terminals= new HashMap();
 	HashMap nonterminals= new HashMap();
 	HashMap firstSets= new HashMap();
 	HashMap cc= new HashMap(); // cc == Canonical Collection
-	LinkedList transitions= new LinkedList();
-	LinkedList reductions= new LinkedList();
+	List transitions= new ArrayList();
+	List reductions= new ArrayList();
 	int acceptState= -1;
 
 	public static final class Tables {
-		public HashMap[] actionTable;
-		public HashMap[] gotoTable;
-		public List conflicts;
+		public Map[] actionTable;
+		public Map[] gotoTable;
+		public String[] conflicts;
 	}
 
 	public static final Tables generate(Nonterminal startSymbol, ParseRule[] rules, Priorities priorities) {
@@ -137,25 +136,32 @@ public class TableBuilder {
 		while (worklist.size() > 0) {
 			curItemSet= (HashSet) worklist.removeFirst();
 			int curIdx= getItemSetIdx(curItemSet);
-			HashSet paths= new HashSet();
+			HashMap paths= new HashMap();
 			for (Iterator items= curItemSet.iterator(); items.hasNext();) {
 				LR1Item item= (LR1Item) items.next();
 				if (item.placeholder < item.rule.symbols.length)
-					paths.add(item.rule.symbols[item.placeholder]);
+					addHighestPriorityPath(paths, item.rule.symbols[item.placeholder], priorities.get(item.rule));
 				else
 					reductions.add(new Reduction(curIdx, item.rule, item.lookahead));
 			}
-			for (Iterator pathTerms= paths.iterator(); pathTerms.hasNext();) {
-				Object symbol= pathTerms.next();
+			for (Iterator pathTerms= paths.entrySet().iterator(); pathTerms.hasNext();) {
+				Map.Entry path= (Map.Entry) pathTerms.next();
+				Object symbol= path.getKey();
 				HashSet nextState= calcNextState(curItemSet, symbol);
 				ItemSetEntry entry= (ItemSetEntry) cc.get(nextState);
 				if (entry == null) { // its a new one
 					entry= appendItemSet(nextState);
 					worklist.add(nextState);
 				}
-				transitions.add(new Transition(curIdx, entry.idx, symbol));
+				transitions.add(new Transition(curIdx, entry.idx, symbol, ((Integer)path.getValue()).intValue()));
 			}
 		}
+	}
+
+	void addHighestPriorityPath(Map paths, Object symbol, int priority) {
+		Integer oldPri= (Integer) paths.get(symbol);
+		if (oldPri == null || oldPri.intValue() < priority)
+			paths.put(symbol, new Integer(priority));
 	}
 
 	/** Calculate the closure of the current set of items, modifying the set.
@@ -250,11 +256,13 @@ public class TableBuilder {
 	}
 
 	Tables buildTables() {
+		Map ruleToIdx= LR1_Table.buildArrayReverseMapping(rules);
 		HashMap rulePrec= new HashMap();
-		ArrayList conflicts= new ArrayList(0);
-		rulePriCache.clear(); // reset the priority cache in case they have changed
-		HashMap[] actionTable= new HashMap[cc.size()];
-		HashMap[] gotoTable= new HashMap[cc.size()];
+		Set conflicts= new HashSet();
+		Map acnPriMap= new HashMap();
+//		rulePriCache.clear(); // reset the priority cache in case they have changed
+		Map[] actionTable= new Map[cc.size()];
+		Map[] gotoTable= new Map[cc.size()];
 		int actionTableBuckets= nonterminals.size(); // number of hash buckets
 		int gotoTableBuckets= (terminals.size()/3)<<2;
 		for (int i=0; i<actionTable.length; i++) {
@@ -262,94 +270,74 @@ public class TableBuilder {
 			gotoTable[i]= new HashMap(gotoTableBuckets);
 		}
 
-		for (int i=transitions.size(); i>0; i--) {
-			Transition tr= (Transition) transitions.removeFirst();
+		for (Iterator itr=transitions.iterator(); itr.hasNext();) {
+			Transition tr= (Transition) itr.next();
 			if (tr.symbol instanceof Nonterminal)
 				gotoTable[tr.fromState].put(tr.symbol, new Integer(tr.toState));
 			else
-				actionTable[tr.fromState].put(tr.symbol, ParseAction.CreateShift(tr.toState));
+				setTableEntry(tr.fromState, tr.symbol, CreateShift(tr.toState), tr.pri, actionTable, acnPriMap, conflicts);
 		}
-		for (int i=reductions.size(); i>0; i--) {
-			Reduction reduc= (Reduction) reductions.removeFirst();
+		for (Iterator itr=reductions.iterator(); itr.hasNext();) {
+			Reduction reduc= (Reduction) itr.next();
+			int ruleIdx= ((Integer)ruleToIdx.get(reduc.rule)).intValue();
 			for (Iterator lookahead= reduc.terminals.iterator(); lookahead.hasNext();) {
 				Object terminal= lookahead.next();
-				ParseAction prevAcn= (ParseAction) actionTable[reduc.state].get(terminal);
-				ParseAction newAcn= ParseAction.CreateReduce(reduc.rule);
-				if (terminal == TokenSource.EOF && reduc.rule.target == start)
-					newAcn.type= ParseAction.ACCEPT;
-				ParseAction winner= decidePrecedence(newAcn, prevAcn, terminal, conflicts);
-				if (winner != prevAcn)
-					actionTable[reduc.state].put(terminal, winner);
+				boolean isAccept= (terminal == TokenSource.EOF) && (reduc.rule.target == start);
+				ParseAction newAcn= CreateReduce(ruleIdx, isAccept);
+				setTableEntry(reduc.state, terminal, newAcn, priorities.get(reduc.rule), actionTable, acnPriMap, conflicts);
 			}
 		}
 		Tables result= new Tables();
 		result.actionTable= actionTable;
 		result.gotoTable= gotoTable;
-		result.conflicts= conflicts;
+		result.conflicts= (String[]) conflicts.toArray(new String[conflicts.size()]);
 		return result;
 	}
 
-	ParseAction decidePrecedence(ParseAction reducAcn, ParseAction prevAcn, Object lookahead, List conflicts) {
+	public void setTableEntry(int state, Object lookahead, ParseAction acn, int pri, Map[] actionTable, Map acnPriMap, Set conflicts) {
+		ParseAction prevAcn= (ParseAction) actionTable[state].get(lookahead);
+		ParseAction decision= prevAcn;
 		if (prevAcn == null)
-			return reducAcn;
-		if (prevAcn.type == ParseAction.SHIFT) {
-			// Shift-Reduce conflict
-			int reducPrec= getRulePrecedence(reducAcn.rule);
-			int shiftPrec= getTermPrecedence(lookahead);
-			if (reducPrec == 0 || shiftPrec == 0) {
-				conflicts.add("Shift/Reduce error deciding between "+reducAcn+" and "+prevAcn+" with a lookahead of "+lookahead+".");
-				return prevAcn;
+			decision= acn;
+		else {
+			int prevPri= ((Integer) acnPriMap.get(prevAcn)).intValue();
+			if (prevAcn.type == ParseAction.SHIFT && acn.type == ParseAction.SHIFT) {
+				// Special handling for SHIFT-SHIFT conflicts, which aren't really conflicts at all.
+				// We need to update the priority map with whichever priority is highest.
+				decision= prevAcn;
+				if (pri > prevPri)
+					acnPriMap.put(prevAcn, new Integer(pri));
 			}
-			if (reducPrec < shiftPrec)
-				return prevAcn;
-			if (reducPrec > shiftPrec)
-				return reducAcn;
-			// if precedence of rule and terminal are equal, then use associativity
-			switch (priorities.getAssociativity(reducPrec)) {
-			case Priorities.LEFT:
-				return reducAcn;
-			case Priorities.RIGHT:
-				return prevAcn;
-			case Priorities.NONASSOC:
-				return ParseAction.CreateNonassocSyntaxError();
-			}
-			throw new RuntimeException("This can't happen");
-		}
-		else if (prevAcn.type == ParseAction.REDUCE || prevAcn.type == ParseAction.ACCEPT) {
-			// Reduce-Reduce conflict
-			conflicts.add("Reduce/Reduce error deciding between "+reducAcn+" and "+prevAcn+" with a lookahead of "+lookahead+".");
-			return prevAcn;
-		}
-		else // action type is NONASSOC_ERR
-			throw new RuntimeException("Can this happen?");
-	}
-
-	int getRulePrecedence(ParseRule rule) {
-		Integer pri= (Integer) rulePriCache.get(rule);
-		if (pri == null) {
-			pri= (Integer) priorities.getInt(rule);
-			if (pri == null) {
-				// calculate default priority of the rule based on last terminal symbol
-				int i;
-				for (i= rule.symbols.length-1; i >= 0; i--)
-					if (!(rule.symbols[i] instanceof Nonterminal)) {
-						pri= priorities.getInt(rule.symbols[i]);
-						break;
+			else {
+				if (pri != Priorities.DEF_PRI && prevPri != Priorities.DEF_PRI && (prevAcn.type == ParseAction.SHIFT || pri != prevPri)) {
+					if (pri != prevPri)
+						decision= (pri > prevPri)? acn : prevAcn;
+					else {
+						// if precedence of reduction rule and shift rule are equal, then use associativity
+						switch (priorities.getAssociativity(pri)) {
+						case Priorities.LEFT:     decision= acn; break;
+						case Priorities.RIGHT:    decision= prevAcn; break;
+						case Priorities.NONASSOC: decision= CreateNonassocSyntaxError(); break;
+						default: throw new RuntimeException("This can't happen");
+						}
 					}
+				}
+				else
+					conflicts.add(getConflictString(prevAcn, prevPri, acn, pri, lookahead));
 			}
-			if (pri == null)
-				pri= Priorities.DEF_PRI;
-			rulePriCache.put(rule, pri);
 		}
-		return pri.intValue();
+		if (decision != prevAcn) {
+			actionTable[state].put(lookahead, decision);
+			acnPriMap.put(decision, new Integer(pri));
+		}
 	}
 
-	int getTermPrecedence(Object terminal) {
-		Integer pri= priorities.getInt(terminal);
-		if (pri == null)
-			return 0;
-		else
-			return pri.intValue();
+	String getConflictString(ParseAction oldAcn, int oldPri, ParseAction newAcn, int newPri, Object lookahead) {
+		return (oldAcn.type==ParseAction.SHIFT?"Shift":"Reduce")+'/'
+			+(newAcn.type==ParseAction.SHIFT?"Shift":"Reduce")
+			+" error deciding between "+newAcn.toString(rules, newPri)
+			+" and "+oldAcn.toString(rules, oldPri)
+			+" with a lookahead of "+lookahead+".";
 	}
 
 	static final class LR1Item {
@@ -362,7 +350,7 @@ public class TableBuilder {
 			this.rule= rule;
 			this.placeholder= placeholder;
 			this.lookahead= lookahead;
-			hash= ((rule.hashCode() ^ placeholder)<<5) + lookahead.hashCode();
+			hash= ((rule.hashCode() ^ placeholder)*37) + lookahead.hashCode();
 		}
 
 		public int hashCode() {
@@ -404,11 +392,13 @@ public class TableBuilder {
 	static final class Transition {
 		int fromState, toState;
 		Object symbol;
+		int pri;
 
-		public Transition(int fromState, int toState, Object terminal) {
+		public Transition(int fromState, int toState, Object terminal, int priority) {
 			this.fromState= fromState;
 			this.toState= toState;
 			this.symbol= terminal;
+			pri= priority;
 		}
 	}
 
@@ -422,6 +412,17 @@ public class TableBuilder {
 			this.rule= rule;
 			this.terminals= terminals;
 		}
+
+		public int hashCode() {
+			return state ^ rule.hashCode() ^ terminals.hashCode();
+		}
+
+		public boolean equals(Object other) {
+			return (other instanceof Reduction) && this.equals((Reduction)other);
+		}
+		public boolean equals(Reduction other) {
+			return other.state == state && other.rule == rule && other.terminals.equals(terminals);
+		}
 	}
 
 	public static final Object EMPTY= new Object() {
@@ -429,4 +430,21 @@ public class TableBuilder {
 			return "/empty/";
 		}
 	};
+
+	public static ParseAction CreateShift(int nextState) {
+		ParseAction result= new ParseAction(ParseAction.SHIFT, 0, 0);
+		result.nextState= nextState;
+		return result;
+	}
+
+	public static ParseAction CreateReduce(int rule, boolean isAcceptReduction) {
+		ParseAction result= new ParseAction(isAcceptReduction? ParseAction.ACCEPT:ParseAction.REDUCE, 0, 0);
+		result.rule= rule;
+		return result;
+	}
+
+	public static ParseAction CreateNonassocSyntaxError() {
+		return new ParseAction(ParseAction.NONASSOC_ERR, 0, 0);
+	}
 }
+

@@ -3,10 +3,19 @@ package com.silverdirk.parser;
 import java.util.*;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: com.silverdirk.parser</p>
+ * <p>Title: Parser</p>
+ * <p>Description: Parsing engine driven by LR(1) tables</p>
+ * <p>Copyright: Copyright (c) 2005-2006</p>
+ *
+ * This class is really just one function, 'parse', bound to a set of rules and
+ * an LR(1) table.  For further explanation, find a good book or website about
+ * parsing, LL, LR, LR(1), or LALR.  This algorithm was implemented from the
+ * description and pseudocode in
+ * "Engineering a Compiler", by Cooper and Torczon. [Morgan Kaufmann 2004]
+ *
+ * Some ideas may also have been borrowed from the Java CUP project, which I
+ * used in Compiler Theory class, and whose source code I investigated.
  *
  * @author Michael Conrad
  * @version $Revision$
@@ -24,14 +33,40 @@ public class Parser {
 		table= precompiledTable;
 	}
 
+	/** Parse (non-debug).
+	 * This simply calls 'parse' with debug mode off.
+	 *
+	 * @param input A source of tokens
+	 * @return An object describing the entire tree
+	 * @throws ParseException whenever a token is encountered which cannot match a current rule, and if there is no error action registered
+	 */
 	public Object parse(TokenSource input) throws ParseException {
 		return parse(input, false);
 	}
 
+	/** Parse (debug).
+	 * This simply calls 'parse' with debug mode on.
+	 *
+	 * @param input A source of tokens
+	 * @return An object describing the entire tree
+	 * @throws ParseException whenever a token is encountered which cannot match a current rule, and if there is no error action registered
+	 */
 	public Object debugParse(TokenSource input) throws ParseException {
 		return parse(input, true);
 	}
 
+	/** Parse
+	 * This parses a token stream using the tables given to the constructor, and
+	 * returns the root of the parse tree.
+	 *
+	 * It has an optional debugging mode, where GenericparseNodes are returned
+	 * instead of running the user's code during a rule-reduce.
+	 *
+	 * @param input A source of tokens
+	 * @param debug Whether or not to use debugging behavior.
+	 * @return An object describing the entire tree
+	 * @throws ParseException whenever a token is encountered which cannot match a current rule, and if there is no error action registered
+	 */
 	public Object parse(TokenSource input, boolean debug) throws ParseException {
 		ParseState state;
 		int symbol;
@@ -40,11 +75,23 @@ public class Parser {
 		Object nextTok= input.curToken();
 		while (true) {
 			state= (ParseState) parseStack.peek();
-			ParseAction action= (ParseAction) actionTable[state.id].get(nextTok);
-			if (action == null)
-				action= (ParseAction) actionTable[state.id].get(nextTok.getClass());
-			if (action == null)
-				throw new ParseException("Unexpected "+nextTok+" encountered", input.getContext(), actionTable[state.id].keySet().toArray(), input.curTokenPos());
+			ParseAction action= table.getAction(state.id, nextTok);
+			if (action == null) {
+				Class typ= nextTok.getClass();
+				do {
+					action= table.getAction(state.id, typ);
+					typ= typ.getSuperclass();
+				} while (action == null && typ != Object.class);
+				if (action == null) {
+					Object[] expectedSet= table.getOptions(state.id);
+					action= table.getErrAction(state.id, nextTok, expectedSet, input.curTokenPos());
+					if (action == null)
+						throw new ParseException("Unexpected "+nextTok+" encountered",
+							input.getContext(),
+							(ParseState[]) parseStack.toArray(new ParseState[parseStack.size()]),
+							expectedSet, input.curTokenPos());
+				}
+			}
 			switch (action.type) {
 			case ParseAction.SHIFT:
 				parseStack.push(new ParseState(action.nextState, nextTok, input.curTokenPos()));
@@ -73,7 +120,7 @@ public class Parser {
 					return data;
 				else {
 					state= (ParseState) parseStack.peek();
-					int nextState= ((Integer) gotoTable[state.id].get(rule.target)).intValue();
+					int nextState= table.getStateTrans(state.id, rule.target);
 					parseStack.push(new ParseState(nextState, data, pos));
 				}
 				break;
@@ -91,14 +138,16 @@ public class Parser {
 		public static final int
 			LEFT= 0,
 			RIGHT= 1,
-			NONASSOC= 2;
-		public static final Integer DEF_PRI= new Integer(0);
+			NONASSOC= 2,
+			DEF_PRI= -1;
+		static final Integer
+			DEF_PRI_OBJ= new Integer(DEF_PRI);
 
 		public static class PriorityLevel {
-			Object[] items;
+			ParseRule[] items;
 			int assoc;
 			int level;
-			public PriorityLevel(Object[] items, int assoc, int level) {
+			public PriorityLevel(ParseRule[] items, int assoc, int level) {
 				this.items= items;
 				this.assoc= assoc;
 				this.level= level;
@@ -113,65 +162,55 @@ public class Parser {
 				set(levels[i]);
 		}
 
-		public Integer getInt(Object symbol) {
-			Integer pri= (Integer) priorities.get(symbol);
-			if (pri != null) return pri;
-			if (!(symbol instanceof Nonterminal))
-				pri= (Integer) priorities.get(symbol.getClass());
-			return pri;
-		}
-
-		public int get(Object symbol) {
-			Integer pri= getInt(symbol);
-			if (pri == null) return 0;
-			else return pri.intValue();
-		}
-
-		public void set(Object symbol, int value) {
-			if (value < 0)
-				throw new RuntimeException("Bad associativity value");
-			setPriVal(symbol, value);
-		}
-
 		public void set(PriorityLevel lev) {
 			set(lev.items, lev.assoc, lev.level);
 		}
 
-		public void set(Object[] symbols, int associativity, int value) {
-			if (value < 0)
-				throw new RuntimeException("Bad associativity value");
+		public void set(ParseRule[] rules, int associativity, int value) {
 			setAssociativity(value, associativity);
-			for (int i=0; i<symbols.length; i++)
-				setPriVal(symbols[i], value);
+			for (int i=0; i<rules.length; i++)
+				set(rules[i], value);
 		}
 
-		private void setPriVal(Object symbol, int value) {
-			if (value != 0)
-				priorities.put(symbol, new Integer(value));
+		public int get(ParseRule rule) {
+			Integer pri= (Integer) priorities.get(rule);
+			return (pri == null)? DEF_PRI : pri.intValue();
+		}
+
+		public void set(ParseRule rules, int value) {
+			checkPriVal(value, true);
+			if (value != DEF_PRI)
+				priorities.put(rules, new Integer(value));
 			else
-				priorities.remove(symbol);
+				priorities.remove(rules);
 		}
 
 		public int getAssociativity(int priVal) {
-			if (priVal < 1)
-				throw new RuntimeException("Bad associativity value");
+			checkPriVal(priVal, false);
 			Integer assocVal= (Integer) associativity.get(new Integer(priVal));
-			if (assocVal == null)
-				return LEFT;
-			else
-				return assocVal.intValue();
+			return (assocVal == null)? LEFT : assocVal.intValue();
 		}
 
 		public void setAssociativity(int priVal, int association) {
-			if (priVal < 1)
+			checkPriVal(priVal, false);
+			checkAssocVal(association);
+			if (association != LEFT)
+				associativity.put(new Integer(priVal), new Integer(association));
+			else
+				associativity.remove(new Integer(priVal));
+		}
+
+		void checkPriVal(int value, boolean allowDefault) {
+			if ((allowDefault?value:value-1) < DEF_PRI)
+				throw new RuntimeException("Bad priority");
+		}
+		void checkAssocVal(int value) {
+			if (value < LEFT || value > NONASSOC)
 				throw new RuntimeException("Bad associativity value");
-			if (association < LEFT || association > NONASSOC)
-				throw new RuntimeException("Bad associativity value");
-			associativity.put(new Integer(priVal), new Integer(association));
 		}
 	}
 
-	private static final class ParseState {
+	static final class ParseState {
 		int id;
 		Object data;
 		SourcePos pos;
@@ -186,26 +225,13 @@ public class Parser {
 	}
 
 	static final class ParseAction {
-		int type;
-		ParseRule rule;
-		int nextState;
+		int type, rule, nextState;
 
-		private ParseAction(int type) {
+		ParseAction() {}
+		ParseAction(int type, int rule, int nextState) {
 			this.type= type;
-			rule= null;
-			nextState= 0;
-		}
-
-		public static ParseAction CreateShift(int nextState) {
-			ParseAction result= new ParseAction(SHIFT);
-			result.nextState= nextState;
-			return result;
-		}
-
-		public static ParseAction CreateReduce(ParseRule rule) {
-			ParseAction result= new ParseAction(REDUCE);
-			result.rule= rule;
-			return result;
+			this.rule= rule;
+			this.nextState= nextState;
 		}
 
 		// XXX make this an inner class so this mess can get fixed up

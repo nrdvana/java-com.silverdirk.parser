@@ -231,24 +231,25 @@ public class _TestTableBuilder extends TestCase {
 //		System.out.println("Grammar Conflicts: "+result.conflicts.size());
 //		for (Iterator itr= result.conflicts.iterator(); itr.hasNext();)
 //			System.out.println(itr.next());
-		assertEquals(32, result.conflicts.size());
+		assertEquals(32, result.conflicts.length);
 	}
 
 	public void testFixedConflictGrammar() throws Exception {
-		Parser.Priorities pri= new Parser.Priorities();
-		pri.set(PLUS, 1);
-		pri.set(MINUS, 1);
-		pri.set(TIMES, 2);
-		pri.set(DIV, 2);
+		ParseRule sumRule, difRule, prodRule, divRule;
 		ParseRule[] conflictExprGrammar= new ParseRule[] {
-			new ParseRule(Expr, new Object[]{ Expr, PLUS, Expr }),
-			new ParseRule(Expr, new Object[]{ Expr, MINUS, Expr }),
-			new ParseRule(Expr, new Object[]{ Expr, TIMES, Expr }),
-			new ParseRule(Expr, new Object[]{ Expr, DIV, Expr }),
+			sumRule= new ParseRule(Expr, new Object[]{ Expr, PLUS, Expr }),
+			difRule= new ParseRule(Expr, new Object[]{ Expr, MINUS, Expr }),
+			prodRule= new ParseRule(Expr, new Object[]{ Expr, TIMES, Expr }),
+			divRule= new ParseRule(Expr, new Object[]{ Expr, DIV, Expr }),
 			new ParseRule(Expr, new Object[]{ LPAREN, Expr, RPAREN }),
 			new ParseRule(Expr, new Object[]{ Number.class }),
 			new ParseRule(Expr, new Object[]{ String.class })
 		};
+		Parser.Priorities pri= new Parser.Priorities();
+		pri.set(sumRule, 1);
+		pri.set(difRule, 1);
+		pri.set(prodRule, 2);
+		pri.set(divRule, 2);
 		TableBuilder tb= new TableBuilder(Expr, conflictExprGrammar, pri);
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
@@ -262,7 +263,7 @@ public class _TestTableBuilder extends TestCase {
 //		System.out.println("Grammar Conflicts: "+result.conflicts.size());
 //		for (Iterator itr= result.conflicts.iterator(); itr.hasNext();)
 //			System.out.println(itr.next());
-		assertEquals(0, result.conflicts.size());
+		assertEquals(0, result.conflicts.length);
 	}
 
 	static final Nonterminal

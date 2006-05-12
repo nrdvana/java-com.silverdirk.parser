@@ -19,7 +19,7 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testSimple() throws Exception {
-		parser= new Parser(Goal, new ParseRule[] {new ParseRule(Goal, new Object[] {DOT})}, null);
+		parser= new Parser(new Grammar(Goal, new ParseRule[] {new ParseRule(Goal, new Object[] {DOT})}));
 		TokenSource input= new ArrayTokenSource("", new Object[] {DOT}, null);
 		Object result= parser.parse(input);
 		assertEquals(GenericParseNode.class, result.getClass());
@@ -30,12 +30,13 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testSheepNoise() throws Exception {
-		parser= new Parser(Goal,
+		parser= new Parser(new Grammar(Goal,
 			new ParseRule[] {
 				new ParseRule(Goal, new Object[] {SheepNoise}),
 				new ParseRule(SheepNoise, new Object[] {"baa", SheepNoise}, sheepHandlInst),
 				new ParseRule(SheepNoise, new Object[] {"baa"}, sheepHandlInst)
-			}, null);
+			}
+		));
 
 		TokenSource input= new ArrayTokenSource("", new Object[] {"baa", "baa", "baa", "baa"}, null);
 
@@ -50,11 +51,13 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testLrecSheepNoise() throws Exception {
-		parser= new Parser(SheepNoise,
+		parser= new Parser(new Grammar(
+			SheepNoise,
 			new ParseRule[] {
 				new ParseRule(SheepNoise, new Object[] {SheepNoise, "baa"}, sheepHandlInst2),
 				new ParseRule(SheepNoise, new Object[] {}, sheepHandlInst2)
-			}, null);
+			}
+		));
 
 		TokenSource input= new ArrayTokenSource("", new Object[] {"baa", "baa", "baa", "baa"}, null);
 
@@ -74,13 +77,16 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testNullableFirstNonterm() throws Exception {
-		parser= new Parser(Goal, new ParseRule[] {
+		parser= new Parser(new Grammar(
+			Goal,
+			new ParseRule[] {
 				new ParseRule(Goal, new Object[] { MaybeNothing, SheepNoise }),
 				new ParseRule(SheepNoise, new Object[] {SheepNoise, "baa"}, new ParseRule.ListBuildHandler(0, 1)),
 				new ParseRule(SheepNoise, new Object[] {"baa"}, ParseRule.FIRSTELEM_PASSTHROUGH),
 				new ParseRule(MaybeNothing, new Object[] {"something"}, ParseRule.FIRSTELEM_PASSTHROUGH),
 				new ParseRule(MaybeNothing, new Object[] {}, ParseRule.FIRSTELEM_PASSTHROUGH),
-			}, null);
+			}
+		));
 
 		TokenSource
 			input1= new ArrayTokenSource("", new Object[] {"something", "baa", "baa", "baa", "baa"}, null),
