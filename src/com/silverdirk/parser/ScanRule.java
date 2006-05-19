@@ -71,39 +71,44 @@ public class ScanRule {
 	public ScanMatch getMatch(CharSequence source) {
 		Object token= null;
 		int charsConsumed= 0;
-		if (matchTarget instanceof Character) {
-			if (source.charAt(0) == ((Character)matchTarget).charValue()) {
-				token= onMatch(source.subSequence(0, 1).toString());
-				charsConsumed= 1;
+		try {
+			if (matchTarget instanceof Character) {
+				if (source.charAt(0) == ((Character)matchTarget).charValue()) {
+					token= onMatch(source.subSequence(0, 1).toString());
+					charsConsumed= 1;
+				}
 			}
-		}
-		else if (matchTarget instanceof String) {
-			String str= (String) matchTarget;
-			if (source.length() >= str.length()
-				&& str.equals(source.subSequence(0, str.length()).toString()))
-			{
-				token= onMatch(str);
-				charsConsumed= str.length();
+			else if (matchTarget instanceof String) {
+				String str= (String) matchTarget;
+				if (source.length() >= str.length()
+					&& str.equals(source.subSequence(0, str.length()).toString()))
+				{
+					token= onMatch(str);
+					charsConsumed= str.length();
+				}
 			}
-		}
-		else if (matchTarget instanceof Pattern) {
-			Matcher m= ((Pattern)matchTarget).matcher(source);
-			if (m.lookingAt()) {
-				token= onMatch(m.group());
-				charsConsumed= m.end();
+			else if (matchTarget instanceof Pattern) {
+				Matcher m= ((Pattern)matchTarget).matcher(source);
+				if (m.lookingAt()) {
+					token= onMatch(m.group());
+					charsConsumed= m.end();
+				}
 			}
+			else
+				throw new RuntimeException("BUG");
 		}
-		else
-			throw new RuntimeException("BUG");
+		catch (Exception ex) {
+			throw (ex instanceof RuntimeException)? (RuntimeException)ex : new RuntimeException(ex);
+		}
 		return (token == null)? null : new ScanMatch(token, charsConsumed);
 	}
 
-	public Object onMatch(String scannedData) {
+	public Object onMatch(String scannedData) throws Exception {
 		return (token == EMIT_MATCH)? scannedData : token;
 	}
 
-	static final Object
+	public static final Object
 		EMIT_MATCH= new Object(),
-		EMIT_NOTHING= null;
+		EMIT_NOTHING= new Object();
 	public static final int NO_STATE_TRANS= -1;
 }

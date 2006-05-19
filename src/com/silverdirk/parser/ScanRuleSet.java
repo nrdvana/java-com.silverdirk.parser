@@ -24,20 +24,25 @@ public class ScanRuleSet {
 	}
 
 	public ScanRule[] getRulesFor(CharSequence str) {
-		char firstChar= str.charAt(0);
-		int low= 0, high= switchLookup.length;
-		while (high-low > 1) {
-			int mid= (low+high)>>>1;
-			if (firstChar > switchLookup[mid])
-				low= mid;
-			else if (firstChar < switchLookup[mid])
-				high= mid;
-			else
-				low= high= mid;
+		int[] a, b= leftoverRegexes;
+		if (switchLookup.length != 0) {
+			char firstChar= str.charAt(0);
+			int low= 0, high= switchLookup.length;
+			while (high-low > 1) {
+				int mid= (low+high)>>>1;
+				if (firstChar > switchLookup[mid])
+					low= mid;
+				else if (firstChar < switchLookup[mid])
+					high= mid;
+				else
+					low= high= mid;
+			}
+			int switchIdx= low;
+			a= switchBody[switchIdx];
 		}
-		int switchIdx= low;
+		else
+			a= new int[0];
 		// now merge the lists, on rule index (because rule order specifies precedence)
-		int[] a= switchBody[switchIdx], b= leftoverRegexes;
 		ScanRule[] result= new ScanRule[a.length+b.length];
 		int i= 0, aIdx=0, bIdx=0;
 		for (; aIdx<a.length && bIdx<b.length; i++)

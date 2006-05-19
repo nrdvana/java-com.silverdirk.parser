@@ -45,19 +45,22 @@ public class Scanner implements TokenSource {
 			for (int i=0; i<options.length; i++) {
 				ScanRule.ScanMatch match= options[i].getMatch(bufferTail);
 				if (match != null) {
+					if (match.charsConsumed <= 0)
+						throw new RuntimeException("Error in spec: scan rule can potentially match empty string");
 					success= true;
 					token= match.token;
 					pos+= match.charsConsumed;
 					if (options[i].hasStateTransition())
 						state= options[i].getStateTransition();
+					break;
 				}
 			}
 			if (!success)
-				throw new RuntimeException("Scan error near "+getContext());
+				throw new RuntimeException("Scan error at \""+bufferTail.subSequence(0, Math.min(10, bufferTail.length())).toString()+"\" near \""+getContext()+"\"");
 		} while (token == ScanRule.EMIT_NOTHING);
 	}
 
 	public String getContext() {
-		return data.subSequence(Math.max(0, pos-50), pos+50).toString();
+		return data.subSequence(Math.max(0, pos-20), Math.min(pos+20, data.length())).toString();
 	}
 }
