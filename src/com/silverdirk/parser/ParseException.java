@@ -39,6 +39,7 @@ public class ParseException extends Exception {
 	}
 
 	public String getStackString() {
+		if (stack == null) return null;
 		StringBuffer result= new StringBuffer().append("{\n    ");
 		for (int i=0; i<stack.length; i++)
 			result.append(stack[i].data).append("\n    ");
@@ -48,6 +49,7 @@ public class ParseException extends Exception {
 	}
 
 	public String getExpectationStr() {
+		if (expectedList == null) return null;
 		StringBuffer expect= new StringBuffer();
 		for (int i=0; i<expectedList.length; i++)
 			expect.append(expectedList[i]).append(' ');
