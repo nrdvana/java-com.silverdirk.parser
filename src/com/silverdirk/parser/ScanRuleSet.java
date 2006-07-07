@@ -17,9 +17,11 @@ public class ScanRuleSet {
 	char[] switchLookup; // a sorted array of characters indicating which list of rules should be used
 	int[][] switchBody; // the list of rules that should be processed for this character
 	int[] leftoverRegexes;
+	String stateName;
 
-	public ScanRuleSet(ScanRule[] rules) {
+	public ScanRuleSet(String name, ScanRule[] rules) {
 		this.rules= rules;
+		this.stateName= name;
 		buildSwitchTable();
 	}
 

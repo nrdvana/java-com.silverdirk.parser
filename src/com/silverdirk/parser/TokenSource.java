@@ -12,7 +12,7 @@ package com.silverdirk.parser;
 public interface TokenSource {
 	public Object curToken();
 	public SourcePos curTokenPos();
-	public void next();
+	public void next() throws ParseException;
 	public String getContext();
 
 	public static final Object EOF= new Object() {

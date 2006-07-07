@@ -68,13 +68,14 @@ public class ScanRule {
 		}
 	}
 
-	public ScanMatch getMatch(CharSequence source) {
+	public ScanMatch getMatch(Scanner sender, CharSequence source) {
+		String text= null;
 		Object token= null;
 		int charsConsumed= 0;
 		try {
 			if (matchTarget instanceof Character) {
 				if (source.charAt(0) == ((Character)matchTarget).charValue()) {
-					token= onMatch(source.subSequence(0, 1).toString());
+					text= source.subSequence(0, 1).toString();
 					charsConsumed= 1;
 				}
 			}
@@ -83,27 +84,32 @@ public class ScanRule {
 				if (source.length() >= str.length()
 					&& str.equals(source.subSequence(0, str.length()).toString()))
 				{
-					token= onMatch(str);
+					text= str;
 					charsConsumed= str.length();
 				}
 			}
 			else if (matchTarget instanceof Pattern) {
 				Matcher m= ((Pattern)matchTarget).matcher(source);
 				if (m.lookingAt()) {
-					token= onMatch(m.group());
+					text= m.group();
 					charsConsumed= m.end();
 				}
 			}
 			else
 				throw new RuntimeException("BUG");
+
+			if (text != null)
+				token= onMatch(text, sender);
 		}
 		catch (Exception ex) {
 			throw (ex instanceof RuntimeException)? (RuntimeException)ex : new RuntimeException(ex);
 		}
-		return (token == null)? null : new ScanMatch(token, charsConsumed);
+		return (text == null)? null : new ScanMatch(token, charsConsumed);
 	}
 
-	public Object onMatch(String scannedData) throws Exception {
+	public Object onMatch(String scannedData, Scanner scanner) throws Exception {
+		if (hasStateTransition())
+			scanner.stateTrans(getStateTransition());
 		return (token == EMIT_MATCH)? scannedData : token;
 	}
 

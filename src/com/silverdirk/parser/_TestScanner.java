@@ -18,7 +18,7 @@ public class _TestScanner extends TestCase {
 		new ScanRule(Pattern.compile("[A-Za-z_][A-Za-z0-9_]*"))
 	},
 	commentRules= new ScanRule[] {
-	    new ScanRule("*/", null, 0)
+		new ScanRule("*/", null, 0)
 	};
 	ScanRuleSet[] rulesets;
 
@@ -28,7 +28,7 @@ public class _TestScanner extends TestCase {
 
 	protected void setUp() throws Exception {
 		super.setUp();
-		rulesets= new ScanRuleSet[] {new ScanRuleSet(initialRules)};
+		rulesets= new ScanRuleSet[] {new ScanRuleSet("Default", initialRules)};
 	}
 
 	protected void tearDown() throws Exception {
@@ -37,7 +37,7 @@ public class _TestScanner extends TestCase {
 		super.tearDown();
 	}
 
-	public void testSimpleRules() {
+	public void testSimpleRules() throws Exception {
 		String data= "abc[def]ghi;jkl:mno";
 		Object[]  expected= new Object[] {
 			"abc", new Character('['), "def", new Character(']'),
@@ -45,7 +45,7 @@ public class _TestScanner extends TestCase {
 			"mno", TokenSource.EOF
 		};
 		scanner= new Scanner(rulesets, data);
-		for (int i=0; i<expected.length; i++,scanner.next())
+		for (int i = 0; i < expected.length; i++, scanner.next())
 			assertEquals(expected[i], scanner.curToken());
 	}
 

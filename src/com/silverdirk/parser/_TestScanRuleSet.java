@@ -22,7 +22,7 @@ public class _TestScanRuleSet extends TestCase {
 
 	protected void setUp() throws Exception {
 		super.setUp();
-		scanRuleSet= new ScanRuleSet(rules);
+		scanRuleSet= new ScanRuleSet("Default State", rules);
 	}
 
 	protected void tearDown() throws Exception {
