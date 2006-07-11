@@ -37,7 +37,11 @@ public class Scanner implements TokenSource {
 	public void next() throws ParseException {
 		lastPos= pos; // last time there was a successful result
 		token= ScanRule.EMIT_NOTHING;
-		while (pos < data.length() && token == ScanRule.EMIT_NOTHING) {
+		while (token == ScanRule.EMIT_NOTHING) {
+			if (pos >= data.length()) {
+				token= EOF;
+				break;
+			}
 			ScanRuleSet curState= states[state];
 			CharSequence bufferTail= data.subSequence(pos, data.length());
 			ScanRule[] options= curState.getRulesFor(bufferTail);
@@ -62,8 +66,6 @@ public class Scanner implements TokenSource {
 			if (!success)
 				throw new ParseException("Scan error while processing "+states[state].stateName, getContext(), getSourcePos());
 		}
-		if (pos >= data.length())
-			token= EOF;
 	}
 
 	public String getContext() {
