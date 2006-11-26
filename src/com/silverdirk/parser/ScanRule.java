@@ -91,7 +91,7 @@ public class ScanRule {
 			else if (matchTarget instanceof Pattern) {
 				Matcher m= ((Pattern)matchTarget).matcher(source);
 				if (m.lookingAt()) {
-					text= m.group();
+					token= onMatch(m.group());
 					charsConsumed= m.end();
 				}
 			}
@@ -104,7 +104,7 @@ public class ScanRule {
 		catch (Exception ex) {
 			throw (ex instanceof RuntimeException)? (RuntimeException)ex : new RuntimeException(ex);
 		}
-		return (text == null)? null : new ScanMatch(token, charsConsumed);
+		return (token == null)? null : new ScanMatch(token, charsConsumed);
 	}
 
 	public Object onMatch(String scannedData, Scanner scanner) throws Exception {
