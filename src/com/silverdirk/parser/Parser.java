@@ -51,8 +51,8 @@ public class Parser {
 	 * @return An object describing the entire tree
 	 * @throws ParseException whenever a token is encountered which cannot match a current rule, and if there is no error action registered
 	 */
-	public Object debugParse(TokenSource input) throws ParseException {
-		return parse(input, true);
+	public GenericParseNode debugParse(TokenSource input) throws ParseException {
+		return (GenericParseNode) parse(input, true);
 	}
 
 	/** Parse
