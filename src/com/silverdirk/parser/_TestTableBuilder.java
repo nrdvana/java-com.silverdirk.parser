@@ -22,7 +22,7 @@ public class _TestTableBuilder extends TestCase {
 	}
 
 	public void testSymbolMapping() {
-		TableBuilder tb= new TableBuilder(Goal, ruleMix, null);
+		TableBuilder tb= new TableBuilder(Goal, TableBuilder.EOF_SET, ruleMix, null);
 		// test production maps
 		List prods= tb.getProductionRules(Goal);
 		assertTrue(prods != null);
@@ -62,7 +62,7 @@ public class _TestTableBuilder extends TestCase {
 			new ParseRule(Factor, new Object[]{Number.class}),
 			new ParseRule(Factor, new Object[]{String.class})
 		};
-		TableBuilder tb= new TableBuilder(Goal, exprGrammar, null);
+		TableBuilder tb= new TableBuilder(Goal, TableBuilder.EOF_SET, exprGrammar, null);
 		Set firsts= new HashSet();
 		firsts.add(Number.class);
 		firsts.add(String.class);
@@ -77,7 +77,7 @@ public class _TestTableBuilder extends TestCase {
 			new ParseRule(SheepNoise, new Object[] {SheepNoise, "baa"}),
 			new ParseRule(SheepNoise, new Object[] {})
 		};
-		tb= new TableBuilder(SheepNoise, lrecSheepGrammar, null);
+		tb= new TableBuilder(SheepNoise, TableBuilder.EOF_SET, lrecSheepGrammar, null);
 		tb.buildFirstSets();
 		firsts.clear();
 		firsts.add("baa");
@@ -101,7 +101,7 @@ public class _TestTableBuilder extends TestCase {
 			new ParseRule(Factor, new Object[]{ }),
 		};
 
-		TableBuilder tb= new TableBuilder(Goal, grammar, null);
+		TableBuilder tb= new TableBuilder(Goal, TableBuilder.EOF_SET, grammar, null);
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
 		// look for CC[1], and make sure all the possibilities got added
@@ -137,7 +137,7 @@ public class _TestTableBuilder extends TestCase {
 			new ParseRule(Factor, new Object[] {Number.class}),
 			new ParseRule(Factor, new Object[] {String.class})
 		};
-		TableBuilder tb= new TableBuilder(Goal, exprGrammar, null);
+		TableBuilder tb= new TableBuilder(Goal, TableBuilder.EOF_SET, exprGrammar, null);
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
 
@@ -148,7 +148,7 @@ public class _TestTableBuilder extends TestCase {
 
 	public void testSheepNoise() {
 		ParseRule[] rules= new ParseRule[] {SN0, SN1, SN2};
-		TableBuilder tb= new TableBuilder(Goal, rules, null);
+		TableBuilder tb= new TableBuilder(Goal, TableBuilder.EOF_SET, rules, null);
 		// test production maps
 		assertEquals(tb.productionMap.size(), 2);
 		List prods= tb.getProductionRules(Goal);
@@ -224,7 +224,7 @@ public class _TestTableBuilder extends TestCase {
 			new ParseRule(Expr, new Object[]{ Number.class }),
 			new ParseRule(Expr, new Object[]{ String.class })
 		};
-		TableBuilder tb= new TableBuilder(Expr, conflictExprGrammar, null);
+		TableBuilder tb= new TableBuilder(Expr, TableBuilder.EOF_SET, conflictExprGrammar, null);
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
 		TableBuilder.Tables result= tb.buildTables();
@@ -250,7 +250,7 @@ public class _TestTableBuilder extends TestCase {
 		pri.set(difRule, 1);
 		pri.set(prodRule, 2);
 		pri.set(divRule, 2);
-		TableBuilder tb= new TableBuilder(Expr, conflictExprGrammar, pri);
+		TableBuilder tb= new TableBuilder(Expr, TableBuilder.EOF_SET, conflictExprGrammar, pri);
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
 //		for (Iterator itr= tb.cc.values().iterator(); itr.hasNext();) {

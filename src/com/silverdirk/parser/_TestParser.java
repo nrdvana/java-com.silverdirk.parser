@@ -30,19 +30,18 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testSheepNoise() throws Exception {
-		parser= new Parser(new Grammar(Goal,
+		Grammar g= new Grammar(SheepNoise,
 			new ParseRule[] {
-				new ParseRule(Goal, new Object[] {SheepNoise}),
 				new ParseRule(SheepNoise, new Object[] {"baa", SheepNoise}, sheepHandlInst),
 				new ParseRule(SheepNoise, new Object[] {"baa"}, sheepHandlInst)
 			}
-		));
-
+		);
+		LR1_Table table= new LR1_Table(g, System.out);
+		parser= new Parser(g, table);
+		System.out.print(parser.table.toString());
 		TokenSource input= new ArrayTokenSource("", new Object[] {"baa", "baa", "baa", "baa"}, null);
 
 		Object result= parser.parse(input);
-		assertEquals(GenericParseNode.class, result.getClass());
-		result= ((GenericParseNode)result).components[0];
 		assertEquals(Vector.class, result.getClass());
 		Vector baaList= (Vector) result;
 		assertEquals(4, baaList.size());
@@ -51,14 +50,15 @@ public class _TestParser extends TestCase {
 	}
 
 	public void testLrecSheepNoise() throws Exception {
-		parser= new Parser(new Grammar(
-			SheepNoise,
+		Grammar g= new Grammar(SheepNoise,
 			new ParseRule[] {
 				new ParseRule(SheepNoise, new Object[] {SheepNoise, "baa"}, sheepHandlInst2),
 				new ParseRule(SheepNoise, new Object[] {}, sheepHandlInst2)
 			}
-		));
-
+		);
+		LR1_Table table= new LR1_Table(g, System.out);
+		parser= new Parser(g, table);
+		System.out.print(parser.table.toString());
 		TokenSource input= new ArrayTokenSource("", new Object[] {"baa", "baa", "baa", "baa"}, null);
 
 		Object result= parser.parse(input);
@@ -103,6 +103,33 @@ public class _TestParser extends TestCase {
 		assertEquals(4, ((List)result.components[1]).size());
 	}
 
+	public void testExpressionGrammar() throws Exception {
+		ParseRule parens, add, sub, mul, div;
+		ParseRule[] rules= new ParseRule[] {
+			add= new ParseRule(Expr, new Object[] {Expr, "+", Expr}),
+			sub= new ParseRule(Expr, new Object[] {Expr, "-", Expr}),
+			mul= new ParseRule(Expr, new Object[] {Expr, "*", Expr}),
+			div= new ParseRule(Expr, new Object[] {Expr, "/", Expr}),
+			parens= new ParseRule(Expr, new Object[] {"(", Expr, ")"}, new ParseRule.PassthroughHandler(1)),
+			new ParseRule(Expr, new Object[] {Integer.class}, ParseRule.FIRSTELEM_PASSTHROUGH),
+		};
+		Priorities pri= new Priorities(new PriorityLevel[] {
+			new PriorityLevel(new ParseRule[] {add, sub}, Priorities.LEFT, 1),
+			new PriorityLevel(new ParseRule[] {mul, div}, Priorities.LEFT, 2),
+			new PriorityLevel(new ParseRule[] {parens}, Priorities.LEFT, 3)
+		});
+		Grammar g= new Grammar(Expr, rules, pri);
+		LR1_Table table= new LR1_Table(g, System.out);
+		parser= new Parser(g, table);
+		System.out.print(parser.table.toString());
+		TokenSource input= new ArrayTokenSource("", new Object[] {
+			new Integer(5), "+", new Integer(3), "*", new Integer(12),
+			"+", new Integer(1), "*", "(", new Integer(8), "-", new Integer(3), ")"
+		}, null);
+		Object result= parser.parse(input);
+		assertEquals("<Expression>(<Expression>(5, +, <Expression>(3, *, 12)), +, <Expression>(1, *, <Expression>(8, -, 3)))", result.toString());
+	}
+
 	static final class SheepHandler implements Parser.ProductionHandler {
 		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
 			Vector result;
@@ -132,7 +159,8 @@ public class _TestParser extends TestCase {
 	static final Nonterminal
 		Goal= new Nonterminal("Goal"),
 		MaybeNothing= new Nonterminal("MaybeNothing"),
-		SheepNoise= new Nonterminal("SheepNoise");
+		SheepNoise= new Nonterminal("SheepNoise"),
+		Expr= new Nonterminal("Expression");
 
 	static final Character DOT= new Character('.');
 }
