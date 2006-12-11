@@ -40,6 +40,8 @@ public class ScanRule {
 	}
 	public ScanRule(String word) {
 		this(word, word);
+		if (word.length() == 0)
+			throw new RuntimeException("A ScanRule string-match parameter must be at least one character");
 	}
 	public ScanRule(char ch) {
 		this(new Character(ch));
@@ -75,7 +77,7 @@ public class ScanRule {
 		try {
 			if (matchTarget instanceof Character) {
 				if (source.charAt(0) == ((Character)matchTarget).charValue()) {
-					text= source.subSequence(0, 1).toString();
+					token= onMatch(source.subSequence(0, 1).toString(), sender);
 					charsConsumed= 1;
 				}
 			}
@@ -84,27 +86,30 @@ public class ScanRule {
 				if (source.length() >= str.length()
 					&& str.equals(source.subSequence(0, str.length()).toString()))
 				{
-					text= str;
+					token= onMatch(str, sender);
 					charsConsumed= str.length();
 				}
 			}
 			else if (matchTarget instanceof Pattern) {
 				Matcher m= ((Pattern)matchTarget).matcher(source);
 				if (m.lookingAt()) {
-					token= onMatch(m.group());
+					token= onMatch(m, sender);
 					charsConsumed= m.end();
+					if (charsConsumed == 0)
+						throw new RuntimeException("ScanRules must consume at least one character.  The pattern "+matchTarget+" can match an empty string");
 				}
 			}
 			else
 				throw new RuntimeException("BUG");
-
-			if (text != null)
-				token= onMatch(text, sender);
 		}
 		catch (Exception ex) {
 			throw (ex instanceof RuntimeException)? (RuntimeException)ex : new RuntimeException(ex);
 		}
-		return (token == null)? null : new ScanMatch(token, charsConsumed);
+		return charsConsumed == 0? null : new ScanMatch(token, charsConsumed);
+	}
+
+	public Object onMatch(Matcher match, Scanner scanner) throws Exception {
+		return onMatch(match.group(), scanner);
 	}
 
 	public Object onMatch(String scannedData, Scanner scanner) throws Exception {
