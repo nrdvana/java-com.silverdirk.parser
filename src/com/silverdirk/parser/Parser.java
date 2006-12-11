@@ -82,7 +82,7 @@ public class Parser {
 				do {
 					action= table.getAction(state.id, typ);
 					typ= typ.getSuperclass();
-				} while (action == null && typ != Object.class);
+				} while (action == null && typ != null);
 				if (action == null) {
 					Object[] expectedSet= table.getOptions(state.id);
 					action= table.getErrAction(state.id, nextTok, expectedSet, input.curTokenPos());
@@ -99,8 +99,9 @@ public class Parser {
 				input.next();
 				nextTok= input.curToken();
 				break;
-			case ParseAction.REDUCE:
 			case ParseAction.ACCEPT:
+				return ((ParseState) parseStack.peek()).data;
+			case ParseAction.REDUCE:
 				ParseRule rule= rules[action.rule];
 				SourcePos pos= new SourcePos();
 				Object[] symbols= new Object[rule.symbols.length];
@@ -117,13 +118,9 @@ public class Parser {
 				}
 				Object data= debug? new GenericParseNode(rule.getNonterminal(), pos, symbols)
 					: rule.getHandler().reduce(rule, pos, symbols);
-				if (action.type == ParseAction.ACCEPT && parseStack.size() == 1)
-					return data;
-				else {
-					state= (ParseState) parseStack.peek();
-					int nextState= table.getStateTrans(state.id, rule.target);
-					parseStack.push(new ParseState(nextState, data, pos));
-				}
+				state= (ParseState) parseStack.peek();
+				int nextState= table.getStateTrans(state.id, rule.target);
+				parseStack.push(new ParseState(nextState, data, pos));
 				break;
 			case ParseAction.NONASSOC_ERR:
 				throw new ParseException("Cannot use multiple "+nextTok+" without grouping them. (nonassociative operator)", input.getContext(), input.curTokenPos());

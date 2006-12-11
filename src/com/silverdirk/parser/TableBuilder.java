@@ -5,12 +5,24 @@ import com.silverdirk.parser.Parser$Priorities;
 import com.silverdirk.parser.LR1_Table$ParseAction;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR1 Parsing Library</p>
+ * <p>Title: LR1 Table Builder</p>
+ * <p>Description: Builds the components of a LR1 table from the specified components of a grammar</p>
+ * <p>Copyright: Copyright (c) 2004-2007</p>
  *
- * @author not attributable
+ * Most of this class is an implementation of the table generation algorithms,
+ * pseudocode, and general discussion of LR1 variations and optimizations in
+ *   Engineering a Compiler
+ *   Keith D. Cooper & Linda Torczon
+ *   Morgan Kaufmann Publishers, 2004
+ *   ISBN: 1-55860-698-X
+ *
+ * Several parts have been 'tweaked' to get features I desired from a parser,
+ * though they may have been invented by others prior to this.
+ * (it is dangerous to 'innovate' in a heavily researched field ;-)
+ * If I am missing credits, simply inform me and I will apply it where due.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class TableBuilder {
@@ -21,10 +33,14 @@ public class TableBuilder {
 	HashMap terminals= new HashMap();
 	HashMap nonterminals= new HashMap();
 	HashMap firstSets= new HashMap();
-	HashMap cc= new HashMap(); // cc == Canonical Collection
+	HashMap cc= new HashMap(); // cc == Canonical Collection, as seen in the text
+	Set rootFollowSet;
 	List transitions= new ArrayList();
 	List reductions= new ArrayList();
+	java.io.PrintStream debugOutput;
 	int acceptState= -1;
+	private static Nonterminal GOAL= new Nonterminal("#Goal#");
+	static Set EOF_SET= Collections.singleton(TokenSource.EOF);
 
 	public static final class Tables {
 		public Map[] actionTable;
@@ -33,14 +49,19 @@ public class TableBuilder {
 	}
 
 	public static final Tables generate(Nonterminal startSymbol, ParseRule[] rules, Priorities priorities) {
-		TableBuilder tb= new TableBuilder(startSymbol, rules, priorities);
+		return generate(startSymbol, EOF_SET, rules, priorities, null);
+	}
+	public static final Tables generate(Nonterminal startSymbol, Set startSymFollowSet, ParseRule[] rules, Priorities priorities, java.io.PrintStream debug) {
+		TableBuilder tb= new TableBuilder(startSymbol, startSymFollowSet, rules, priorities);
+		tb.debugOutput= debug;
 		tb.buildFirstSets();
 		tb.buildCanonicalCollection();
 		return tb.buildTables();
 	}
 
-	TableBuilder(Nonterminal startSymbol, ParseRule[] rules, Priorities priorities) {
+	TableBuilder(Nonterminal startSymbol, Set startSymFollowSet, ParseRule[] rules, Priorities priorities) {
 		start= startSymbol;
+		rootFollowSet= startSymFollowSet;
 		this.rules= rules;
 		this.priorities= priorities != null? priorities : new Priorities();
 		catalogSymbol(start);
@@ -48,6 +69,9 @@ public class TableBuilder {
 			processRule(rules[i]);
 	}
 
+	/** Process the rule, recording all its symbols and adding it to a reverse
+	 * map of target-symbol => production
+	 */
 	private void processRule(ParseRule r) {
 		catalogSymbol(r.target);
 		for (int i=0; i<r.symbols.length; i++)
@@ -56,6 +80,11 @@ public class TableBuilder {
 		prods.add(r);
 	}
 
+	/** Record the existance of this terminal or nonterminal for the table building algorithm.
+	 * This method is called for every symbol referenced in any parse rule,
+	 * building a complete set of terminals and nonterminals.
+	 * @param sym A symbol, either a nonterminal or terminal.
+	 */
 	private void catalogSymbol(Object sym) {
 		if (sym instanceof Nonterminal) {
 			if (!nonterminals.containsKey(sym)) {
@@ -84,6 +113,13 @@ public class TableBuilder {
 		return (List) productionMap.get(nt);
 	}
 
+	/** Get the 'firstSet' for a terminal or nonterminal.
+	 * The 'firstSet' of a nonterminal was calculated by 'buildFirstSets'.
+	 * The 'firstSet' of a terminal is the terminal itself.
+	 *
+	 * @param symbol The nonterminal or terminal symbol in question
+	 * @return A set of terminal symbols that can begin an instance of this symbol
+	 */
 	Set getFirstSet(Object symbol) {
 		if (symbol instanceof Nonterminal)
 			return (HashSet) firstSets.get(symbol);
@@ -91,6 +127,18 @@ public class TableBuilder {
 			return Collections.singleton(symbol);
 	}
 
+	/** Calculate the set of terminals that could be seen before each nonterminal.
+	 * Uses the algorithm described in Cooper & Torczon to find the FirstSet
+	 * for each nonterminal.  Repeatedly iterates through the parse rules
+	 * increasing the 'firstSet' of each possible leading nonterminal by any
+	 * elements in the 'firstSet' of the parse rule's target.
+	 *
+	 * Algorithm completes when no sets are altered for an entire iteration of
+	 * the list of parse rules.
+	 *
+	 * The sets are maintained within fields of this class, and only used for
+	 * the table building algorithm.
+	 */
 	void buildFirstSets() {
 		firstSets.clear();
 		for (Iterator itr= nonterminals.keySet().iterator(); itr.hasNext();)
@@ -118,20 +166,56 @@ public class TableBuilder {
 		}
 	}
 
-	private ItemSetEntry appendItemSet(HashSet itemSet) {
+	/** Append a new set of LR1Items to the canonical collection.
+	 * This is called each time a new parse state is generated.  The
+	 * object returned represents the <code>CC<sub>i</sub> = { ... }</code>
+	 * notation seen in the text.
+	 *
+	 * If a debugging stream is enabled the set is written as a string;
+	 * after repeated calls this generates a list much like that used in the
+	 * examples in the text.
+	 *
+	 * @param itemSet The newly generated set of items.
+	 * @return An object representing the set of items.
+	 */
+	private ItemSetEntry appendParseState(HashSet itemSet) {
 		ItemSetEntry result= new ItemSetEntry(cc.size(), itemSet);
 		cc.put(itemSet, result);
+		if (debugOutput != null)
+			debugOutput.println(result);
 		return result;
 	}
 
+	/** Build the canonical collection of parse states.
+	 * This algorithm (based on pseudocode and discussion in the text) computes
+	 * every possible state the parser can reach from the initial rule, and
+	 * records the set of rules and their position at that state.
+	 *
+	 * It starts with a GOAL nonterminal which is not part of the given grammar
+	 * and computed the 'closure' of that parse rule to get the initial set of
+	 * rules that the parser is at in the initial state.
+	 *
+	 * For each generated state, the algorithm generates REDUCE actions for
+	 * parse rules that have completed and adds the next symbol in each rule
+	 * still in progress to a list of 'paths'.
+	 *
+	 * For each possible path, the algorithm calculates the new set of rules
+	 * and their progress, and if this is a new unique set it creates a parse
+	 * state for it.  Transitions are then added to a list which will later
+	 * be converted to SHIFTs or entries in the GOTO table.
+	 *
+	 * The the reductions and the transitions are the product of this algorithm.
+	 * The parse states can be discarded afterward, though they might be usable
+	 * for new improvements to the tables, such as error handling.
+	 */
 	void buildCanonicalCollection() {
-		LR1Item primerGoal= new LR1Item(new ParseRule(null, new Object[] { null, start }), 1, Collections.singleton(TokenSource.EOF));
+		LR1Item primerGoal= new LR1Item(new ParseRule(GOAL, new Object[] { null, start }), 1, rootFollowSet);
 		HashSet curItemSet;
 		LinkedList worklist= new LinkedList();
 
 		curItemSet= closure(new HashSet(Collections.singleton(primerGoal)));
-		curItemSet.remove(primerGoal);
-		appendItemSet(curItemSet);
+//		curItemSet.remove(primerGoal);
+		appendParseState(curItemSet);
 		worklist.add(curItemSet);
 		while (worklist.size() > 0) {
 			curItemSet= (HashSet) worklist.removeFirst();
@@ -140,8 +224,10 @@ public class TableBuilder {
 			for (Iterator items= curItemSet.iterator(); items.hasNext();) {
 				LR1Item item= (LR1Item) items.next();
 				if (item.placeholder < item.rule.symbols.length)
+					// collect 'SHIFT's for after this loop
 					addHighestPriorityPath(paths, item.rule.symbols[item.placeholder], priorities.get(item.rule));
 				else
+					// 'ACCEPT' actions get added as reductions, for now
 					reductions.add(new Reduction(curIdx, item.rule, item.lookahead));
 			}
 			for (Iterator pathTerms= paths.entrySet().iterator(); pathTerms.hasNext();) {
@@ -150,7 +236,7 @@ public class TableBuilder {
 				HashSet nextState= calcNextState(curItemSet, symbol);
 				ItemSetEntry entry= (ItemSetEntry) cc.get(nextState);
 				if (entry == null) { // its a new one
-					entry= appendItemSet(nextState);
+					entry= appendParseState(nextState);
 					worklist.add(nextState);
 				}
 				transitions.add(new Transition(curIdx, entry.idx, symbol, ((Integer)path.getValue()).intValue()));
@@ -158,20 +244,69 @@ public class TableBuilder {
 		}
 	}
 
+	/** Add a transition and its greatest priority to the list of paths.
+	 * Part of buildCanonicalCollection.
+	 *
+	 * The priority of a transition is determined by the 'priorities' of the
+	 * grammar.  Sometimes several of the same transition can have different
+	 * priorities, and it is important to record the highest priority of the
+	 * transition so that it can be correctly compared with the priority of
+	 * REDUCE rules.
+	 *
+	 * @param paths A set of transition paths for the current parse state
+	 * @param symbol The symbol that causes this transition
+	 * @param priority The newly-discovered priority of this transition, which may be more or less than the previously-discovered priority
+	 */
 	void addHighestPriorityPath(Map paths, Object symbol, int priority) {
 		Integer oldPri= (Integer) paths.get(symbol);
 		if (oldPri == null || oldPri.intValue() < priority)
 			paths.put(symbol, new Integer(priority));
 	}
 
+	/** Caculate the next state reached from the current state after recognizing the given symbol.
+	 * Part of buildCanonicalCollection.
+	 *
+	 * This simply creates a new rule set and adds all rules which can be
+	 * advanced by the given symbol.  A new instance of each matching rule is
+	 * creates with its 'position' advanced.
+	 *
+	 * The closure is also calculated, to include other rules which might now
+	 * be reached.
+	 *
+	 * @param fromState The set of LR1 items in the current parse state
+	 * @param symbol The symbol with which to advance each rule
+	 * @return The closure of the new state reached
+	 */
+	private HashSet calcNextState(HashSet fromState, Object symbol) {
+		HashSet nextState= new HashSet();
+		Iterator items= fromState.iterator();
+		while (items.hasNext()) {
+			LR1Item cur= (LR1Item) items.next();
+			if (cur.placeholder < cur.rule.symbols.length)
+				if (cur.rule.symbols[cur.placeholder].equals(symbol))
+					nextState.add(new LR1Item(cur.rule, cur.placeholder+1, cur.lookahead));
+		}
+		return closure(nextState);
+	}
+
 	/** Calculate the closure of the current set of items, modifying the set.
+	 * This is a direct implementation of the Closure algorithm pseudocode
+	 * from the text.
+	 *
+	 * Conceptually, this function adds any new rules to the set which the
+	 * parser could now be processing.  In other words, any nonterminal at the
+	 * current position of any rule means that all rules that reduce to that
+	 * nonterminal could also be reached from this state, and are thus at
+	 * 'position 0' in this state.
+	 *
+	 * Details:
 	 * This function expands all possible nonterminal symbols in each LR1 item
 	 * which are at the placeholder using every rule for that nonterminal.
 	 * For each rule expanded, it then also expands leading nonterminal symbols.
 	 *
 	 * Along the way, it calculates all the possible lookahead terminals which
 	 * could appear after an expansion of the rule.  At the end, it uses the
-	 * list of rules and their corresponding lookagead sets to create new LR1
+	 * list of rules and their corresponding lookahead sets to create new LR1
 	 * items, which it adds to the itemSet, forming the closure.
 	 *
 	 * This algorithm depends on itemSet not starting with any productions with
@@ -243,24 +378,20 @@ public class TableBuilder {
 		}
 	}
 
-	private HashSet calcNextState(HashSet fromState, Object symbol) {
-		HashSet nextState= new HashSet();
-		Iterator items= fromState.iterator();
-		while (items.hasNext()) {
-			LR1Item cur= (LR1Item) items.next();
-			if (cur.placeholder < cur.rule.symbols.length)
-				if (cur.rule.symbols[cur.placeholder].equals(symbol))
-					nextState.add(new LR1Item(cur.rule, cur.placeholder+1, cur.lookahead));
-		}
-		return closure(nextState);
-	}
-
+	/** Build the action and goto tables from the results of buildCanonicalCollection.
+	 * The inputs are the fields 'transitions' and 'reductions', generated by
+	 * buildCanonicalCollection.
+	 *
+	 * The algorithm simply adds all the entries to the tables and resolves
+	 * conflicts by comparing priorities of the actions.
+	 *
+	 * @return A set of data representing the tables needed for an LR1 parse.
+	 */
 	Tables buildTables() {
 		Map ruleToIdx= LR1_Table.buildArrayReverseMapping(rules);
 		HashMap rulePrec= new HashMap();
 		Set conflicts= new HashSet();
 		Map acnPriMap= new HashMap();
-//		rulePriCache.clear(); // reset the priority cache in case they have changed
 		Map[] actionTable= new Map[cc.size()];
 		Map[] gotoTable= new Map[cc.size()];
 		int actionTableBuckets= nonterminals.size(); // number of hash buckets
@@ -275,15 +406,17 @@ public class TableBuilder {
 			if (tr.symbol instanceof Nonterminal)
 				gotoTable[tr.fromState].put(tr.symbol, new Integer(tr.toState));
 			else
-				setTableEntry(tr.fromState, tr.symbol, CreateShift(tr.toState), tr.pri, actionTable, acnPriMap, conflicts);
+				setTableEntry(tr.fromState, tr.symbol, ParseAction.MkShift(tr.toState), tr.pri, actionTable, acnPriMap, conflicts);
 		}
 		for (Iterator itr=reductions.iterator(); itr.hasNext();) {
 			Reduction reduc= (Reduction) itr.next();
-			int ruleIdx= ((Integer)ruleToIdx.get(reduc.rule)).intValue();
 			for (Iterator lookahead= reduc.terminals.iterator(); lookahead.hasNext();) {
 				Object terminal= lookahead.next();
-				boolean isAccept= (terminal == TokenSource.EOF) && (reduc.rule.target == start);
-				ParseAction newAcn= CreateReduce(ruleIdx, isAccept);
+				ParseAction newAcn;
+				if (reduc.rule.getNonterminal() == GOAL)
+					newAcn= ParseAction.MkAccept();
+				else
+					newAcn= ParseAction.MkReduce(((Integer)ruleToIdx.get(reduc.rule)).intValue());
 				setTableEntry(reduc.state, terminal, newAcn, priorities.get(reduc.rule), actionTable, acnPriMap, conflicts);
 			}
 		}
@@ -294,7 +427,20 @@ public class TableBuilder {
 		return result;
 	}
 
-	public void setTableEntry(int state, Object lookahead, ParseAction acn, int pri, Map[] actionTable, Map acnPriMap, Set conflicts) {
+	/** Set a cell of the parse table to the given action, if it has priority.
+	 * This routine compares the new action with any existing actions, and
+	 * either sets the table entry to the new action, ignores the new action,
+	 * or detects a conflict which it adds to the conflict set.
+	 *
+	 * @param state The index of the current parser state (row of actionTable)
+	 * @param lookahead The terminal symbol which the parser will look for (column of actionTable)
+	 * @param acn The action to take when encountering this terminal
+	 * @param pri The priority of this action
+	 * @param actionTable The table being edited
+	 * @param acnPriMap A map of the priorities of each action that was added to the table
+	 * @param conflicts A set of conflicts to which any new conflicts will be added
+	 */
+	void setTableEntry(int state, Object lookahead, ParseAction acn, int pri, Map[] actionTable, Map acnPriMap, Set conflicts) {
 		ParseAction prevAcn= (ParseAction) actionTable[state].get(lookahead);
 		ParseAction decision= prevAcn;
 		if (prevAcn == null)
@@ -308,6 +454,13 @@ public class TableBuilder {
 				if (pri > prevPri)
 					acnPriMap.put(prevAcn, new Integer(pri));
 			}
+			else if (acn.type == ParseAction.ACCEPT) {
+				// Accept shopuld never conflict?  XXX
+				throw new RuntimeException();
+				// in a SHIFT-ACCEPT conflict, shift always wins.  No sense in
+				// stopping the parse when we could keep going
+//				decision= prevAcn;
+			}
 			else {
 				if (pri != Priorities.DEF_PRI && prevPri != Priorities.DEF_PRI && (prevAcn.type == ParseAction.SHIFT || pri != prevPri)) {
 					if (pri != prevPri)
@@ -317,14 +470,20 @@ public class TableBuilder {
 						switch (priorities.getAssociativity(pri)) {
 						case Priorities.LEFT:     decision= acn; break;
 						case Priorities.RIGHT:    decision= prevAcn; break;
-						case Priorities.NONASSOC: decision= CreateNonassocSyntaxError(); break;
+						case Priorities.NONASSOC: decision= ParseAction.MkNonassoc(); break;
 						default: throw new RuntimeException("This can't happen");
 						}
 					}
 				}
-				else
-					conflicts.add(getConflictString(prevAcn, prevPri, acn, pri, lookahead));
+				else {
+					String conflictMsg= getConflictString(prevAcn, prevPri, acn, pri, lookahead);
+					conflicts.add(conflictMsg);
+					if (debugOutput != null)
+						debugOutput.println(conflictMsg);
+				}
 			}
+			if (debugOutput != null && decision != prevAcn)
+				debugOutput.println("state="+state+" lookahead="+lookahead+": changed "+prevAcn+" to "+decision);
 		}
 		if (decision != prevAcn) {
 			actionTable[state].put(lookahead, decision);
@@ -333,13 +492,21 @@ public class TableBuilder {
 	}
 
 	String getConflictString(ParseAction oldAcn, int oldPri, ParseAction newAcn, int newPri, Object lookahead) {
-		return (oldAcn.type==ParseAction.SHIFT?"Shift":"Reduce")+'/'
-			+(newAcn.type==ParseAction.SHIFT?"Shift":"Reduce")
-			+" error deciding between "+newAcn.toString(rules, newPri)
-			+" and "+oldAcn.toString(rules, oldPri)
+		return ParseAction.ACTION_NAMES[oldAcn.type]+'/'
+			+ParseAction.ACTION_NAMES[oldAcn.type]
+			+" error deciding between "+newAcn.toStringVerbose(rules, newPri)
+			+" and "+oldAcn.toStringVerbose(rules, oldPri)
 			+" with a lookahead of "+lookahead+".";
 	}
 
+	/**
+	 * <p>Title: LR1 Item
+	 * <p>Description: This class represents a parse rule with a position marker, and a set of lookahead symbols
+	 *
+	 * Instances of this class are immutable and can act as the key for a
+	 * hashtable.  They also support a deep-equals.  The toString method
+	 * generates notation similar to that used in the text.
+	 */
 	static final class LR1Item {
 		ParseRule rule;
 		int placeholder;
@@ -379,6 +546,13 @@ public class TableBuilder {
 		}
 	}
 
+	/**
+	 * <p>Title: Item Set Entry</p>
+	 * <p>Description: Represents a parser state which is part of the Canonical Collection</p>
+	 *
+	 * The main purpose of this class is to associate an index with the set of
+	 * LR1 items.
+	 */
 	static final class ItemSetEntry {
 		int idx;
 		HashSet itemSet;
@@ -387,8 +561,16 @@ public class TableBuilder {
 			this.idx= idx;
 			this.itemSet= itemSet;
 		}
+
+		public String toString() {
+			StringBuffer sb= new StringBuffer("CC_"+idx+" {\n");
+			for (Iterator i= itemSet.iterator(); i.hasNext();)
+				sb.append("\t").append(i.next()).append("\n");
+			return sb.append("}\n").toString();
+		}
 	}
 
+	// Represents a transition which will be recorded in one of the tables.
 	static final class Transition {
 		int fromState, toState;
 		Object symbol;
@@ -402,6 +584,7 @@ public class TableBuilder {
 		}
 	}
 
+	// Represents a reduction or accept which will be recorded in the action table.
 	static final class Reduction {
 		int state;
 		ParseRule rule;
@@ -425,26 +608,11 @@ public class TableBuilder {
 		}
 	}
 
+	// An object representing the zero-length-string symbol needed for lookaheads
 	public static final Object EMPTY= new Object() {
 		public String toString() {
 			return "/empty/";
 		}
 	};
-
-	public static ParseAction CreateShift(int nextState) {
-		ParseAction result= new ParseAction(ParseAction.SHIFT, 0, 0);
-		result.nextState= nextState;
-		return result;
-	}
-
-	public static ParseAction CreateReduce(int rule, boolean isAcceptReduction) {
-		ParseAction result= new ParseAction(isAcceptReduction? ParseAction.ACCEPT:ParseAction.REDUCE, 0, 0);
-		result.rule= rule;
-		return result;
-	}
-
-	public static ParseAction CreateNonassocSyntaxError() {
-		return new ParseAction(ParseAction.NONASSOC_ERR, 0, 0);
-	}
 }
 

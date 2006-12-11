@@ -16,8 +16,11 @@ public class LR1_Table {
 	ParseRule[] rules;
 
 	public LR1_Table(Grammar g) {
+		this(g, (java.io.PrintStream)null);
+	}
+	public LR1_Table(Grammar g, java.io.PrintStream debug) {
 		this.rules= g.rules;
-		TableBuilder.Tables t= TableBuilder.generate(g.start, g.rules, g.priorities);
+		TableBuilder.Tables t= TableBuilder.generate(g.start, g.startFollowSet, g.rules, g.priorities, debug);
 		if (t.conflicts.length > 0) {
 			StringBuffer conflictList= new StringBuffer();
 			conflictList.append("Grammar has conflicts:\n");

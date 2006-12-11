@@ -1,4 +1,5 @@
 package com.silverdirk.parser;
+import java.util.Set;
 
 /**
  * <p>Project: 42</p>
@@ -13,6 +14,7 @@ public class Grammar {
 	public Nonterminal start;
 	public ParseRule[] rules;
 	public Parser.Priorities priorities;
+	public Set startFollowSet= TableBuilder.EOF_SET;
 
 	public Grammar(Nonterminal start, java.util.Collection rules) {
 		this(start, (ParseRule[]) rules.toArray(new ParseRule[rules.size()]));
@@ -30,5 +32,9 @@ public class Grammar {
 		this.start= start;
 		this.rules= rules;
 		this.priorities= priorities;
+	}
+	public Grammar(Nonterminal start, Set startFollowSet, ParseRule[] rules, Parser.Priorities priorities) {
+		this(start, rules, priorities);
+		this.startFollowSet= startFollowSet;
 	}
 }
