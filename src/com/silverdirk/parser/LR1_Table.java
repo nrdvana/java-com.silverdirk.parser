@@ -41,6 +41,7 @@ public class LR1_Table {
 	public LR1_Table(ParseRule[] rules, int[][] tableEntries) {
 		this.rules= rules;
 		Object[] intToSymbol= buildSymbolLists(rules);
+		table= new Map[tableEntries.length];
 		for (int row=0; row<tableEntries.length; row++)
 			table[row]= deserializeTableRow(intToSymbol, tableEntries[row]);
 	}
@@ -79,6 +80,8 @@ public class LR1_Table {
 	static Object[] buildSymbolLists(ParseRule[] rules) {
 		HashSet seen= new HashSet();
 		ArrayList list= new ArrayList();
+		seen.add(TokenSource.EOF);
+		list.add(TokenSource.EOF);
 		for (int rule=0; rule<rules.length; rule++) {
 			if (seen.add(rules[rule].getNonterminal()))
 				list.add(rules[rule].getNonterminal());
@@ -98,38 +101,46 @@ public class LR1_Table {
 	}
 
 	static int[] serializeTableRow(Map symbolIdMap, Map rowMap) {
-		int[] buffer= new int[rowMap.size() * 4]; // max of 4 ints generated per entry
+		int[] buffer= new int[rowMap.size() * 3]; // max of 3 ints generated per entry
 		int pos= 0;
 		for (Iterator i= rowMap.entrySet().iterator(); i.hasNext();) {
 			Map.Entry ent= (Map.Entry) i.next();
 			buffer[pos++]= ((Integer)symbolIdMap.get(ent.getKey())).intValue();
-			if (ent.getKey() instanceof Nonterminal) {
-				ParseAction acn= (ParseAction) ent.getValue();
-				buffer[pos++]= acn.type;
-				buffer[pos++]= acn.rule;
-				buffer[pos++]= acn.nextState;
-			}
-			else
+			if (ent.getKey() instanceof Nonterminal)
 				buffer[pos++]= ((Integer)ent.getValue()).intValue();
+			else
+				pos+= ((ParseAction) ent.getValue()).serializeToBuffer(buffer, pos);
 		}
 		int[] result= new int[pos];
 		System.arraycopy(buffer, 0, result, 0, pos);
 		return result;
 	}
 
-	static Map deserializeTableRow(Object[] symbolList, int[] codes) {
+	static String intArraysToJava(int[][] serData) {
+		StringBuffer sb= new StringBuffer(512);
+		sb.append("new int[][] {\n");
+		for (int row=0; row<serData.length; row++) {
+			sb.append("\tnew int[] {");
+			for (int col=0; col<serData[row].length; col++)
+				sb.append(serData[row][col]).append(',');
+			sb.deleteCharAt(sb.length()-1);
+			sb.append("},\n");
+		}
+		return sb.append("};").toString();
+	}
+
+	Map deserializeTableRow(Object[] symbolList, int[] codes) {
 		HashMap result= new HashMap();
-		for (int i=0; i<codes.length; i++) {
-			Object key= symbolList[codes[i]];
-			if (key instanceof Nonterminal) {
-				ParseAction acn= new ParseAction(0, 0, 0); //a bit dangerous to deserialize when the constructor params are all the same type
-				acn.type= codes[++i];
-				acn.rule= codes[++i];
-				acn.nextState= codes[++i];
+		int pos= 0;
+		while (pos < codes.length) {
+			Object key= symbolList[codes[pos++]];
+			if (key instanceof Nonterminal)
+				result.put(key, new Integer(codes[pos++]));
+			else {
+				ParseAction acn= new ParseAction(0, 0, 0);
+				pos+= acn.deserializeFromBuffer(codes, pos);
 				result.put(key, acn);
 			}
-			else
-				result.put(key, new Integer(codes[i++]));
 		}
 		return result;
 	}
