@@ -1,7 +1,6 @@
 package com.silverdirk.parser;
 
 import java.util.*;
-import com.silverdirk.parser.Parser$ParseAction;
 
 /**
  * <p>Project: UDT Editor</p>
@@ -133,5 +132,87 @@ public class LR1_Table {
 				result.put(key, new Integer(codes[i++]));
 		}
 		return result;
+	}
+
+	public static class ParseAction {
+		int type, rule, nextState;
+
+		ParseAction() {}
+		ParseAction(int type, int rule, int nextState) {
+			this.type= type;
+			this.rule= rule;
+			this.nextState= nextState;
+		}
+
+		public static ParseAction MkShift(int nextState) {
+			return new ParseAction(SHIFT, 0, nextState);
+		}
+
+		public static ParseAction MkReduce(int rule) {
+			return new ParseAction(REDUCE, rule, 0);
+		}
+
+		public static ParseAction MkAccept() {
+			return new ParseAction(ACCEPT, 0, 0);
+		}
+		public static ParseAction MkNonassoc() {
+			return new ParseAction(ParseAction.NONASSOC_ERR, 0, 0);
+		}
+
+		public String toStringVerbose(ParseRule[] rules, int priority) {
+			String base;
+			switch (type) {
+			case SHIFT: base= "[Shift "+nextState+"]"; break;
+			case REDUCE: base= "[Reduce "+rules[rule]+"]"; break;
+			case ACCEPT: base= "[Accept]"; break;
+			case NONASSOC_ERR: base= "[NonAssoc]"; break;
+			default:
+				throw new RuntimeException("This can't happen");
+			}
+			String priString= (priority == Parser.Priorities.DEF_PRI)? "DEFAULT" : Integer.toString(priority);
+			return (type==NONASSOC_ERR)? base : base.substring(0, base.length()-1)+", pri="+priString+"]";
+		}
+
+		public String toString() {
+			switch (type) {
+			case SHIFT: return "[Shift "+nextState+"]";
+			case REDUCE: return "[Reduce "+rule+"]";
+			case ACCEPT: return "[Accept]";
+			case NONASSOC_ERR: return "[NonAssoc]";
+			default:
+				throw new RuntimeException("This can't happen");
+			}
+		}
+
+		int serializeToBuffer(int[] buffer, int pos) {
+			buffer[pos]= type;
+			switch (type) {
+			case REDUCE: buffer[pos+1]= rule; return 2;
+			case SHIFT: buffer[pos+1]= nextState; return 2;
+			default: return 1;
+			}
+		}
+
+		int deserializeFromBuffer(int[] buffer, int pos) {
+			type= buffer[pos];
+			switch (type) {
+			case REDUCE: rule= buffer[pos+1]; return 2;
+			case SHIFT: nextState= buffer[pos+1]; return 2;
+			default: return 1;
+			}
+		}
+
+		public static final int
+			SHIFT= 0,
+			REDUCE= 1,
+			ACCEPT= 2,
+			NONASSOC_ERR= 3;
+		public static final String[] ACTION_NAMES= new String[4];
+		static {
+			ACTION_NAMES[SHIFT]= "Shift";
+			ACTION_NAMES[REDUCE]= "Reduce";
+			ACTION_NAMES[ACCEPT]= "Accept";
+			ACTION_NAMES[NONASSOC_ERR]= "Nonassociation";
+		}
 	}
 }

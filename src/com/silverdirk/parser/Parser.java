@@ -1,6 +1,7 @@
 package com.silverdirk.parser;
 
 import java.util.*;
+import com.silverdirk.parser.LR1_Table$ParseAction;
 
 /**
  * <p>Project: com.silverdirk.parser</p>
@@ -222,49 +223,6 @@ public class Parser {
 			this.data= data;
 			this.pos= pos;
 		}
-	}
-
-	static final class ParseAction {
-		int type, rule, nextState;
-
-		ParseAction() {}
-		ParseAction(int type, int rule, int nextState) {
-			this.type= type;
-			this.rule= rule;
-			this.nextState= nextState;
-		}
-
-		// XXX make this an inner class so this mess can get fixed up
-		public String toString(ParseRule[] ruleset, int priority) {
-			String base;
-			switch (type) {
-			case SHIFT: base= "[Shift "+nextState+"]"; break;
-			case REDUCE: base= "[Reduce "+ruleset[rule]+"]"; break;
-			case ACCEPT: base= "[Accept "+ruleset[rule]+"]"; break;
-			case NONASSOC_ERR: base= "[NonAssoc]"; break;
-			default:
-				throw new RuntimeException("This can't happen");
-			}
-			String priString= (priority == Priorities.DEF_PRI)? "DEFAULT" : Integer.toString(priority);
-			return (type==NONASSOC_ERR)? base : base.substring(0, base.length()-1)+", pri="+priority+"]";
-		}
-
-		public String toString() {
-			switch (type) {
-			case SHIFT: return "[Shift "+nextState+"]";
-			case REDUCE: return "[Reduce "+rule+"]";
-			case ACCEPT: return "[Accept "+rule+"]";
-			case NONASSOC_ERR: return "[NonAssoc]";
-			default:
-				throw new RuntimeException("This can't happen");
-			}
-		}
-
-		public static final int
-			SHIFT= 0,
-			REDUCE= 1,
-			ACCEPT= 2,
-			NONASSOC_ERR= 3;
 	}
 
 	public interface ProductionHandler {

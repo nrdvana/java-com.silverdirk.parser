@@ -3,7 +3,7 @@ package com.silverdirk.parser;
 import junit.framework.*;
 import java.util.*;
 import com.silverdirk.parser.TableBuilder$LR1Item;
-import com.silverdirk.parser.Parser$ParseAction;
+import com.silverdirk.parser.LR1_Table$ParseAction;
 
 public class _TestTableBuilder extends TestCase {
 	private TableBuilder tableBuilder= null;
