@@ -46,6 +46,23 @@ public class LR1_Table {
 			table[row]= deserializeTableRow(intToSymbol, tableEntries[row]);
 	}
 
+	public String toString() {
+		StringBuffer sb= new StringBuffer();
+		for (int row=0; row<table.length; row++) {
+			sb.append(row).append(": ");
+			String gotoTable= "";
+			for (Iterator i= table[row].entrySet().iterator(); i.hasNext();) {
+				Map.Entry ent= (Map.Entry) i.next();
+				if (ent.getKey() instanceof Nonterminal)
+					gotoTable+= "  "+ent.getKey()+":"+ent.getValue();
+				else
+					sb.append("  ").append(ent.getKey()).append(":").append(ent.getValue());
+			}
+			sb.append("  | Goto: ").append(gotoTable).append('\n');
+		}
+		return sb.toString();
+	}
+
 	public int[][] serialize() {
 		Object[] intToSymbol= buildSymbolLists(rules);
 		Map symbolToInt= buildArrayReverseMapping(intToSymbol);
