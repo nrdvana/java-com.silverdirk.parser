@@ -3,12 +3,20 @@ package com.silverdirk.parser;
 import java.io.PrintWriter;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Generic Parse Node</p>
+ * <p>Description: Node used by the default parse handler to simply builds a tree of tokens exactly as it was parsed</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * @author not attributable
+ * Where most ParseHandlers build specific objects with the symbols matched by
+ * the parse rule, the default handler just trees up the symbols using a
+ * GenericParseNode.  This class is also used when "debug" is specified to the
+ * parser's parse method.
+ *
+ * This class has a nifty 'displayTree' method that sort of renders the parse
+ * tree on a PrintWriter.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class GenericParseNode {

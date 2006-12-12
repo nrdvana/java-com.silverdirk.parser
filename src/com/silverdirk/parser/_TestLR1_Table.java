@@ -1,8 +1,8 @@
 package com.silverdirk.parser;
 
 import junit.framework.*;
-import com.silverdirk.parser.Parser$Priorities;
-import com.silverdirk.parser.Parser$Priorities$PriorityLevel;
+import com.silverdirk.parser.Parser.Priorities;
+import com.silverdirk.parser.Parser.Priorities.PriorityLevel;
 
 public class _TestLR1_Table extends TestCase {
 	static final Nonterminal

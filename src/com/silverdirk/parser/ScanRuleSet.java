@@ -4,12 +4,20 @@ import java.util.*;
 import java.util.regex.*;
 
 /**
- * <p>Project: com.silverdirk</p>
- * <p>Title: </p>
- * <p>Description: </p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Set of Scan Rules</p>
+ * <p>Description: Holds a named set of scan rules representing the options for one state of the Scanner</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * @author not attributable
+ * The implementation of this class is clumsy.  See comments at the top of
+ * Scanner.java.  As I intend to destroy all the code in this file, I am not
+ * going to document it further.
+ *
+ * After the rewrite, this class will hold a reference to parameters for a
+ * regex engine, so that the scanner can plug the parameters and the current
+ * input into the regex engine and come up with a sequence of rules to execute.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class ScanRuleSet {

@@ -1,12 +1,16 @@
 package com.silverdirk.parser;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Parse Exception</p>
+ * <p>Description: Exception class that also holds context information</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * @author not attributable
+ * Used by both Parser and Scanner, this class contains an error message,
+ * optional context string, optional parser state stack, optional list of
+ * expected tokens, and optional source-location of the error.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class ParseException extends Exception {
@@ -21,14 +25,22 @@ public class ParseException extends Exception {
 		this.expectedList= expected;
 	}
 
+	/** Get the source-location where the error happened.
+	 * Might be null.
+	 */
 	public SourcePos getLocation() {
 		return location;
 	}
 
+	/** Get the context string associated with this error.
+	 * Might be null.
+	 */
 	public String getSource() {
 		return source;
 	}
 
+	/** Get a semi-verbose message describing the parse error.
+	 */
 	public String getParserMsg() {
 		String result= getMessage()+" at "+getLocation();
 		if (stack != null)
@@ -38,6 +50,8 @@ public class ParseException extends Exception {
 		return result;
 	}
 
+	/** Get a string showing the state of the parser stack.
+	 */
 	public String getStackString() {
 		if (stack == null) return null;
 		StringBuffer result= new StringBuffer().append("{\n    ");
@@ -48,6 +62,8 @@ public class ParseException extends Exception {
 		return result.toString();
 	}
 
+	/** Get a string of the symbols that were expected at this point.
+	 */
 	public String getExpectationStr() {
 		if (expectedList == null) return null;
 		StringBuffer expect= new StringBuffer();
@@ -56,6 +72,39 @@ public class ParseException extends Exception {
 		if (expectedList.length > 0)
 			expect.deleteCharAt(expect.length()-1);
 		return expect.toString();
+	}
+
+	/** Produce a full "syntax error" message as seen in most parsers and interpreters.
+	 */
+	public String getFullMessage() {
+		StringBuffer msg= new StringBuffer(getMessage());
+		if (location != null)
+			msg.append(" at line ").append(location.lineStart);
+		msg.append('\n');
+		String expected= getExpectationStr();
+		if (expected != null)
+			msg.append("Expecting one of: ").append(expected).append("\n");
+		if (location != null) {
+			int locStart= location.charStart-1; // 1-based indicies are annoying
+			int locEnd= location.charEnd-1;
+			int contextStart= Math.max(0, locStart-7);
+			int contextEnd= Math.min(Math.min(contextStart+70, locEnd+7), source.length());
+			msg.append(source.substring(contextStart, contextEnd-contextStart)).append('\n');
+			for (int i=contextStart; i<locStart; i++)
+				msg.append(' ');
+			msg.append('^');
+			int width= Math.min(locEnd-locStart, contextEnd-locStart);
+			for (int i= width-2; i>=0; i--)
+				msg.append('-');
+			if (width > 1)
+				msg.append('^');
+			msg.append('\n');
+		}
+		return msg.toString();
+	}
+
+	public String toString() {
+		return getFullMessage();
 	}
 
 	Object[] expectedList= null;

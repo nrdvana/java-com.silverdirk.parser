@@ -1,20 +1,20 @@
 package com.silverdirk.parser;
 
-import com.silverdirk.parser.Parser$ProductionHandler;
+import com.silverdirk.parser.Parser.ProductionHandler;
 import java.util.*;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Parse Rule</p>
+ * <p>Description: Represents one production of the form "Symbol ::= token [, ...]"</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
  * This is an immutable class representing a production rule.
  * It is immutable, to save the effort of making a mechanism to invalidate
  * the parse tables, and also because I don't see a reason to alter a
  * production rule instead of creating a new one.
  *
- * @author not attributable
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class ParseRule {
@@ -34,7 +34,7 @@ public class ParseRule {
 	public ParseRule(Nonterminal target, Object[] symbols, ProductionHandler handler) {
 		this.target= target;
 		this.symbols= (Object[]) symbols.clone();
-		this.handler= handler;
+		this.handler= handler == null? ParseRule.GenericHandler : handler;
 	}
 
 	/**
@@ -45,7 +45,7 @@ public class ParseRule {
 	 * @param symbols Same as main constructor
 	 */
 	public ParseRule(Nonterminal target, Object[] symbols) {
-		this(target, symbols, ParseRule.GenericHandler);
+		this(target, symbols, null);
 	}
 
 	/** Get the rule target,
@@ -65,7 +65,7 @@ public class ParseRule {
 	}
 
 	/** Get the production handler.
-	 * This function returns that function used to implement reductions based on this rule
+	 * This function returns the function used to implement reductions based on this rule
 	 * @return a reference to the handler object
 	 */
 	public ProductionHandler getHandler() {

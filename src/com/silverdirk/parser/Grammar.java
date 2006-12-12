@@ -2,12 +2,20 @@ package com.silverdirk.parser;
 import java.util.Set;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Grammar</p>
+ * <p>Description: An object holding the parts of a grammar</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * @author not attributable
+ * This class doesn't really do anything aside from holding a collection of
+ * values that usually need to be passed as a group.
+ *
+ * Grammar now contains a "startFolowSet" which is a set of all nonterminal
+ * symbols that are allowed to follow a complete parse of the start symbol.
+ * This set defaults to "EOF" which means that the entire token stream must be
+ * consumed for a parse to be successful.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class Grammar {

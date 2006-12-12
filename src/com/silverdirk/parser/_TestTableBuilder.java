@@ -2,12 +2,10 @@ package com.silverdirk.parser;
 
 import junit.framework.*;
 import java.util.*;
-import com.silverdirk.parser.TableBuilder$LR1Item;
-import com.silverdirk.parser.LR1_Table$ParseAction;
+import com.silverdirk.parser.TableBuilder.LR1Item;
+import com.silverdirk.parser.LR1_Table.ParseAction;
 
 public class _TestTableBuilder extends TestCase {
-	private TableBuilder tableBuilder= null;
-
 	public _TestTableBuilder(String name) {
 		super(name);
 	}
@@ -17,7 +15,6 @@ public class _TestTableBuilder extends TestCase {
 	}
 
 	protected void tearDown() throws Exception {
-		tableBuilder= null;
 		super.tearDown();
 	}
 

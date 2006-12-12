@@ -2,8 +2,8 @@ package com.silverdirk.parser;
 
 import junit.framework.*;
 import java.util.*;
-import com.silverdirk.parser.Parser$Priorities;
-import com.silverdirk.parser.Parser$Priorities$PriorityLevel;
+import com.silverdirk.parser.Parser.Priorities;
+import com.silverdirk.parser.Parser.Priorities.PriorityLevel;
 
 public class _TestParser extends TestCase {
 	private Parser parser = null;

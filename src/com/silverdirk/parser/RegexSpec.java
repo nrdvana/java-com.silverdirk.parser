@@ -3,12 +3,14 @@ package com.silverdirk.parser;
 import java.util.*;
 
 /**
- * <p>Project: UDT Editor</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2006</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Regex Specification</p>
+ * <p>Description: Object tree representing the components of a regex</p>
+ * <p>Copyright: Copyright (c) 2006-2006</p>
  *
- * @author not attributable
+ * Soon to be used in the implementation of Scanner.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class RegexSpec {
@@ -51,7 +53,7 @@ public class RegexSpec {
 			return result;
 		}
 
-		// A quick and dirty parser.. but the regex language is pretty simple.
+		// A quick and dirty LL(1) parser.. but the regex language is pretty simple.
 		Object parseExpr(boolean isSubExpr) {
 			ArrayList options= new ArrayList();
 			ArrayList sequence= new ArrayList();

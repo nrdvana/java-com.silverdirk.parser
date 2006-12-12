@@ -1,10 +1,10 @@
 package com.silverdirk.parser;
 
 import java.util.*;
-import com.silverdirk.parser.LR1_Table$ParseAction;
+import com.silverdirk.parser.LR1_Table.ParseAction;
 
 /**
- * <p>Project: com.silverdirk.parser</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
  * <p>Title: Parser</p>
  * <p>Description: Parsing engine driven by LR(1) tables</p>
  * <p>Copyright: Copyright (c) 2005-2006</p>
@@ -13,7 +13,10 @@ import com.silverdirk.parser.LR1_Table$ParseAction;
  * an LR(1) table.  For further explanation, find a good book or website about
  * parsing, LL, LR, LR(1), or LALR.  This algorithm was implemented from the
  * description and pseudocode in
- * "Engineering a Compiler", by Cooper and Torczon. [Morgan Kaufmann 2004]
+ *   Engineering a Compiler
+ *   Keith D. Cooper & Linda Torczon
+ *   Morgan Kaufmann Publishers, 2004
+ *   ISBN: 1-55860-698-X
  *
  * Some ideas may also have been borrowed from the Java CUP project, which I
  * used in Compiler Theory class, and whose source code I investigated.
@@ -76,6 +79,7 @@ public class Parser {
 		Object nextTok= input.curToken();
 		while (true) {
 			state= (ParseState) parseStack.peek();
+			// Find the action for this token
 			ParseAction action= table.getAction(state.id, nextTok);
 			if (action == null) {
 				Class typ= nextTok.getClass();
@@ -85,12 +89,12 @@ public class Parser {
 				} while (action == null && typ != null);
 				if (action == null) {
 					Object[] expectedSet= table.getOptions(state.id);
-					action= table.getErrAction(state.id, nextTok, expectedSet, input.curTokenPos());
-					if (action == null)
-						throw new ParseException("Unexpected "+nextTok+" encountered",
-							input.getContext(),
-							(ParseState[]) parseStack.toArray(new ParseState[parseStack.size()]),
-							expectedSet, input.curTokenPos());
+//					action= table.getErrAction(state.id, nextTok, expectedSet, input.curTokenPos());
+//					if (action == null)
+					throw new ParseException("Unexpected "+nextTok+" encountered",
+						input.getContext(),
+						(ParseState[]) parseStack.toArray(new ParseState[parseStack.size()]),
+						expectedSet, input.curTokenPos());
 				}
 			}
 			switch (action.type) {
@@ -100,7 +104,7 @@ public class Parser {
 				nextTok= input.curToken();
 				break;
 			case ParseAction.ACCEPT:
-				return ((ParseState) parseStack.peek()).data;
+				return state.data;
 			case ParseAction.REDUCE:
 				ParseRule rule= rules[action.rule];
 				SourcePos pos= new SourcePos();
@@ -130,6 +134,24 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * <p>Title: Parse Rule Priorities</p>
+	 * <p>Description: A class that record priority values for parse rules</p>
+	 * <p>Copyright: Copyright (c) 2006</p>
+	 *
+	 * Priorities of rules can't be determined by a simple mapping from rule to
+	 * integer, because associativity is also needed.  All rules with the same
+	 * priority must have the same associativity.  Thus it made sense to define
+	 * "Priority Levels" which have a priority value and an associativity, and
+	 * map the rules to the level.
+	 *
+	 * The constructors of Priorities and PriorityLevel are designed so that
+	 * all rules and levels and associativity can be specified as a single
+	 * statement.  This makes it easy to define static priority objects.
+	 *
+	 * @author Michael Conrad
+	 * @version $Revision$
+	 */
 	public static class Priorities {
 		HashMap priorities= new HashMap();
 		HashMap associativity= new HashMap();
@@ -141,6 +163,17 @@ public class Parser {
 		static final Integer
 			DEF_PRI_OBJ= new Integer(DEF_PRI);
 
+		/**
+		 * <p>Title: Priority Level</p>
+		 * <p>Description: A class containing the parameters for Priorities.set()</p>
+		 * <p>Copyright: Copyright (c) 2006-2007</p>
+		 *
+		 * This objects exists so that rules can be assigned to levels and
+		 * associativity in a single call to the constructor of Priorities.
+		 *
+		 * @author Michael Conrad
+		 * @version $Revision$
+		 */
 		public static class PriorityLevel {
 			ParseRule[] items;
 			int assoc;
@@ -152,43 +185,81 @@ public class Parser {
 			}
 		}
 
+		/** Create an empty priority map.
+		 */
 		public Priorities() {
 		}
 
+		/** Constructor.
+		 * Construct a mapping from all the rules contained in the priority
+		 * levels to the specified priority value and associativity.
+		 *
+		 * @param levels PriorityLevel[]
+		 */
 		public Priorities(PriorityLevel[] levels) {
 			for (int i=0; i<levels.length; i++)
 				set(levels[i]);
 		}
 
+		/** Set all the rules contained in the PriorityLevel to the attributes of PriorityLevel.
+		 *
+		 * @param lev PriorityLevel A set of rules, a priority value, and an associativity value
+		 */
 		public void set(PriorityLevel lev) {
 			set(lev.items, lev.assoc, lev.level);
 		}
 
+		/**  Set all the rules to the given associativity and priority value.
+		 *
+		 * @param rules ParseRule[] A list of rules to all receive the same attributes
+		 * @param associativity int An associativity value: one of the static integers defined in this class
+		 * @param value int A priority value: any integer >= DEF_PRI (== -1)
+		 */
 		public void set(ParseRule[] rules, int associativity, int value) {
 			setAssociativity(value, associativity);
 			for (int i=0; i<rules.length; i++)
 				set(rules[i], value);
 		}
 
+		/** Get the priority level of a rule.
+		 *
+		 * @param rule ParseRule The rule in question
+		 * @return int The priority level of this rule, defaulting to DEF_PRI (== -1)
+		 */
 		public int get(ParseRule rule) {
 			Integer pri= (Integer) priorities.get(rule);
 			return (pri == null)? DEF_PRI : pri.intValue();
 		}
 
-		public void set(ParseRule rules, int value) {
+		/** Map the specified rule to the specified priority level.
+		 *
+		 * @param rules ParseRule The rule to receive the priority
+		 * @param value int The priority level: any integer >= DEF_PRI (== -1)
+		 */
+		public void set(ParseRule rule, int value) {
 			checkPriVal(value, true);
 			if (value != DEF_PRI)
-				priorities.put(rules, new Integer(value));
+				priorities.put(rule, new Integer(value));
 			else
-				priorities.remove(rules);
+				priorities.remove(rule);
 		}
 
+		/** Get the associativity of a priority level.
+		 *
+		 * @param priVal int The priority level in question: any integer > DEF_PRI (== -1)
+		 * @return int The associativity of that level, defaulting to LEFT
+		 */
 		public int getAssociativity(int priVal) {
 			checkPriVal(priVal, false);
 			Integer assocVal= (Integer) associativity.get(new Integer(priVal));
 			return (assocVal == null)? LEFT : assocVal.intValue();
 		}
 
+		/** Set the associativity of a priority level.
+		 *
+		 * @param priVal int The priority level to change: any integer > DEF_PRY (== -1)
+		 * @param association int The new associativity for this level
+		 */
 		public void setAssociativity(int priVal, int association) {
 			checkPriVal(priVal, false);
 			checkAssocVal(association);

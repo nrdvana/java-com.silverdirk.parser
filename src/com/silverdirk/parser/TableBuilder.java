@@ -1,17 +1,17 @@
 package com.silverdirk.parser;
 
 import java.util.*;
-import com.silverdirk.parser.Parser$Priorities;
-import com.silverdirk.parser.LR1_Table$ParseAction;
+import com.silverdirk.parser.Parser.Priorities;
+import com.silverdirk.parser.LR1_Table.ParseAction;
 
 /**
- * <p>Project: Dynamic LR1 Parsing Library</p>
- * <p>Title: LR1 Table Builder</p>
- * <p>Description: Builds the components of a LR1 table from the specified components of a grammar</p>
- * <p>Copyright: Copyright (c) 2004-2007</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: LR(1) Table Builder</p>
+ * <p>Description: Builds the components of a LR(1) table from the specified components of a grammar</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
  * Most of this class is an implementation of the table generation algorithms,
- * pseudocode, and general discussion of LR1 variations and optimizations in
+ * pseudocode, and general discussion of LR(1) variations and optimizations in
  *   Engineering a Compiler
  *   Keith D. Cooper & Linda Torczon
  *   Morgan Kaufmann Publishers, 2004

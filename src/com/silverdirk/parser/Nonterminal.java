@@ -1,12 +1,15 @@
 package com.silverdirk.parser;
 
 /**
- * <p>Project: 42</p>
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2004-2005</p>
+ * <p>Project: Dynamic LR(1) Parsing Library</p>
+ * <p>Title: Nonterminal Symbol</p>
+ * <p>Description: An object representing a nonterminal symbol of a grammar</p>
+ * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * @author not attributable
+ * Nonterminals are unique immutable objects.  They simply act as keys for
+ * a large number of activities in the Parser and TableBuilder.
+ *
+ * @author Michael Conrad
  * @version $Revision$
  */
 public class Nonterminal {
