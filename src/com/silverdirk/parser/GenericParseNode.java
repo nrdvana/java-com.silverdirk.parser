@@ -8,12 +8,12 @@ import java.io.PrintWriter;
  * <p>Description: Node used by the default parse handler to simply builds a tree of tokens exactly as it was parsed</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * Where most ParseHandlers build specific objects with the symbols matched by
+ * <p>Where most ParseHandlers build specific objects with the symbols matched by
  * the parse rule, the default handler just trees up the symbols using a
  * GenericParseNode.  This class is also used when "debug" is specified to the
  * parser's parse method.
  *
- * This class has a nifty 'displayTree' method that sort of renders the parse
+ * <p>This class has a nifty 'displayTree' method that sort of renders the parse
  * tree on a PrintWriter.
  *
  * @author Michael Conrad

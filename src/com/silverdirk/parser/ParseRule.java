@@ -8,10 +8,21 @@ import java.util.*;
  * <p>Description: Represents one production of the form "Symbol ::= token [, ...]"</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * This is an immutable class representing a production rule.
+ * <p>This is an immutable class representing a production rule.
  * It is immutable, to save the effort of making a mechanism to invalidate
  * the parse tables, and also because I don't see a reason to alter a
  * production rule instead of creating a new one.
+ *
+ * <p>ParseRule has one method in particular that will be frequently overridden:
+ * <code>  Object reduce(SourcePos from, Object[] symbols);  </code>
+ * This is the method that the parser calls when the rule has matched a series
+ * of symbols and should be reduced to its target, and any processing that
+ * needs to be done can be placed in a subclass that overrides this method.
+ *
+ * <p>As an alternative, you can create an instance of ReduceMethod which
+ * implements
+ * <code>  Object reduce(ParseRule rule, SourcePos from, Object[] symbols);  </code>
+ * and then pass this object to the ParseRule constructor.
  *
  * @author Michael Conrad
  * @version $Revision$
@@ -48,7 +59,7 @@ public class ParseRule implements ReduceMethod {
 	}
 
 	/** Get the rule target,
-	 * This function returns the nonterminal that this rule produces.
+	 * <p>This function returns the nonterminal that this rule produces.
 	 * @return the nonterminal symbol product of the rule
 	 */
 	public Nonterminal getNonterminal() {
@@ -56,16 +67,22 @@ public class ParseRule implements ReduceMethod {
 	}
 
 	/** Get the rule symbol list.
-	 * This function creates a copy of the list of symbols that make up the body of the rule
+	 * <p>This function creates a copy of the list of symbols that make up the body of the rule
 	 * @return a copy of the symbol list
 	 */
 	public Object[] getSymbols() {
 		return (Object[]) symbols.clone();
 	}
 
-	/** Get the production handler.
-	 * This function returns the function used to implement reductions based on this rule
-	 * @return a reference to the handler object
+	/** Reduce the given symbols to an object.
+	 * <p>The parser calls this when it has matched this rule and wants to reduce
+	 * it to an object to use in other rules.  If a ReduceMethod was given to
+	 * the constructor, this function calls it.  Otherwise the default action
+	 * is to create a GenericParseNode.
+	 *
+	 * @param from SourcePos The area in the source where this rule is applying
+	 * @param symbols Object[] The symbols that were parsed according to this rule
+	 * @return Object An object representing the target of this rule
 	 */
 	public Object reduce(SourcePos from, Object[] symbols) {
 		if (handler != null)

@@ -6,13 +6,13 @@ package com.silverdirk.parser;
  * <p>Description: Cheap implementation of a scanner for use with the parser</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * This class should be rewritten as a regex engine which processes multiple
+ * <p>This class should be rewritten as a regex engine which processes multiple
  * regex patterns in parallel looking for the first match, perhaps with a
  * priority system.
  *
- * This could almost be accomplished with java.util.regex by taking each scan
+ * <p>This could almost be accomplished with java.util.regex by taking each scan
  * rule's pattern and merging them into a giant multi-condition regex:
- *   String[] { a, b, c, d } => "(a)|(b)|(c)|(d)"
+ * <code>String[] { a, b, c, d } => "(a)|(b)|(c)|(d)"</code>
  * and then checking which group was found to determine which rule was matched.
  * However, this would also involve parsing the regexes to determine how many
  * groups the user had used in their pattern for each rule, and by the time I
@@ -57,7 +57,7 @@ public class Scanner implements TokenSource {
 	}
 
 	/** Advance to the next token.
-	 * This method repeatedly calls getMatch on appropriate ScanRules until it
+	 * <p>This method repeatedly calls getMatch on appropriate ScanRules until it
 	 * receives a token form one of them.  The funtion then returns and the new
 	 * token is available with curToken().  Also calculates the token's
 	 * position.
@@ -98,7 +98,7 @@ public class Scanner implements TokenSource {
 	}
 
 	/** Initialize the data for each state.
-	 * Each state gets "stateData" where temporary values can be stored.  This
+	 * <p>Each state gets "stateData" where temporary values can be stored.  This
 	 * fnction can be used to initialize the state data for all the states used
 	 * by your scan rules.
 	 * @param newStateData Object[] An array of objects, one for each state
@@ -134,7 +134,7 @@ public class Scanner implements TokenSource {
 	}
 
 	/** Get the index of the current state.
-	 * State indicies are non-negative integers.
+	 * <p>State indicies are non-negative integers.
 	 * @return int The index of the current state, 0..N
 	 */
 	public int getState() {
@@ -151,7 +151,7 @@ public class Scanner implements TokenSource {
 	}
 
 	/** Get the index of the current line.
-	 * These values are 1-based by default, though the scan rules can set the
+	 * <p>These values are 1-based by default, though the scan rules can set the
 	 * line number to any value they choose.
 	 * @return int The index of the current line.
 	 */
@@ -167,7 +167,7 @@ public class Scanner implements TokenSource {
 	}
 
 	/** Set the current line number to an arbitrary value.
-	 * This value is normally a 1-based index of a line number, but can be any
+	 * <p>This value is normally a 1-based index of a line number, but can be any
 	 * value.  It is used in getTokenPos(), reported in parseExceptions, and
 	 * possibly examined by other scna rules.
 	 *

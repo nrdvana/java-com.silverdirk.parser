@@ -7,10 +7,10 @@ import java.util.Set;
  * <p>Description: An object holding the parts of a grammar</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * This class doesn't really do anything aside from holding a collection of
+ * <p>This class doesn't really do anything aside from holding a collection of
  * values that usually need to be passed as a group.
  *
- * Grammar now contains a "startFolowSet" which is a set of all nonterminal
+ * <p>Grammar now contains a "startFolowSet" which is a set of all nonterminal
  * symbols that are allowed to follow a complete parse of the start symbol.
  * This set defaults to "EOF" which means that the entire token stream must be
  * consumed for a parse to be successful.

@@ -10,14 +10,15 @@ import com.silverdirk.parser.LR1_Table.ParseAction;
  * <p>Description: Builds the components of a LR(1) table from the specified components of a grammar</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * Most of this class is an implementation of the table generation algorithms,
+ * <p>Most of this class is an implementation of the table generation algorithms,
  * pseudocode, and general discussion of LR(1) variations and optimizations in
+ * <pre>
  *   Engineering a Compiler
  *   Keith D. Cooper & Linda Torczon
  *   Morgan Kaufmann Publishers, 2004
  *   ISBN: 1-55860-698-X
- *
- * Several parts have been 'tweaked' to get features I desired from a parser,
+ * </pre>
+ * <p>Several parts have been 'tweaked' to get features I desired from a parser,
  * though they may have been invented by others prior to this.
  * (it is dangerous to 'innovate' in a heavily researched field ;-)
  * If I am missing credits, simply inform me and I will apply it where due.
@@ -69,8 +70,7 @@ public class TableBuilder {
 			processRule(rules[i]);
 	}
 
-	/** Process the rule, recording all its symbols and adding it to a reverse
-	 * map of target-symbol => production
+	/** Process the rule, recording all its symbols and adding it to a reverse map of target-symbol => production
 	 */
 	private void processRule(ParseRule r) {
 		catalogSymbol(r.target);
@@ -81,7 +81,7 @@ public class TableBuilder {
 	}
 
 	/** Record the existance of this terminal or nonterminal for the table building algorithm.
-	 * This method is called for every symbol referenced in any parse rule,
+	 * <p>This method is called for every symbol referenced in any parse rule,
 	 * building a complete set of terminals and nonterminals.
 	 * @param sym A symbol, either a nonterminal or terminal.
 	 */
@@ -114,7 +114,7 @@ public class TableBuilder {
 	}
 
 	/** Get the 'firstSet' for a terminal or nonterminal.
-	 * The 'firstSet' of a nonterminal was calculated by 'buildFirstSets'.
+	 * <p>The 'firstSet' of a nonterminal was calculated by 'buildFirstSets'.
 	 * The 'firstSet' of a terminal is the terminal itself.
 	 *
 	 * @param symbol The nonterminal or terminal symbol in question
@@ -128,15 +128,15 @@ public class TableBuilder {
 	}
 
 	/** Calculate the set of terminals that could be seen before each nonterminal.
-	 * Uses the algorithm described in Cooper & Torczon to find the FirstSet
+	 * <p>Uses the algorithm described in Cooper & Torczon to find the FirstSet
 	 * for each nonterminal.  Repeatedly iterates through the parse rules
 	 * increasing the 'firstSet' of each possible leading nonterminal by any
 	 * elements in the 'firstSet' of the parse rule's target.
 	 *
-	 * Algorithm completes when no sets are altered for an entire iteration of
+	 * <p>Algorithm completes when no sets are altered for an entire iteration of
 	 * the list of parse rules.
 	 *
-	 * The sets are maintained within fields of this class, and only used for
+	 * <p>The sets are maintained within fields of this class, and only used for
 	 * the table building algorithm.
 	 */
 	void buildFirstSets() {
@@ -167,11 +167,11 @@ public class TableBuilder {
 	}
 
 	/** Append a new set of LR1Items to the canonical collection.
-	 * This is called each time a new parse state is generated.  The
+	 * <p>This is called each time a new parse state is generated.  The
 	 * object returned represents the <code>CC<sub>i</sub> = { ... }</code>
 	 * notation seen in the text.
 	 *
-	 * If a debugging stream is enabled the set is written as a string;
+	 * <p>If a debugging stream is enabled the set is written as a string;
 	 * after repeated calls this generates a list much like that used in the
 	 * examples in the text.
 	 *
@@ -187,24 +187,24 @@ public class TableBuilder {
 	}
 
 	/** Build the canonical collection of parse states.
-	 * This algorithm (based on pseudocode and discussion in the text) computes
+	 * <p>This algorithm (based on pseudocode and discussion in the text) computes
 	 * every possible state the parser can reach from the initial rule, and
 	 * records the set of rules and their position at that state.
 	 *
-	 * It starts with a GOAL nonterminal which is not part of the given grammar
+	 * <p>It starts with a GOAL nonterminal which is not part of the given grammar
 	 * and computed the 'closure' of that parse rule to get the initial set of
 	 * rules that the parser is at in the initial state.
 	 *
-	 * For each generated state, the algorithm generates REDUCE actions for
+	 * <p>For each generated state, the algorithm generates REDUCE actions for
 	 * parse rules that have completed and adds the next symbol in each rule
 	 * still in progress to a list of 'paths'.
 	 *
-	 * For each possible path, the algorithm calculates the new set of rules
+	 * <p>For each possible path, the algorithm calculates the new set of rules
 	 * and their progress, and if this is a new unique set it creates a parse
 	 * state for it.  Transitions are then added to a list which will later
 	 * be converted to SHIFTs or entries in the GOTO table.
 	 *
-	 * The the reductions and the transitions are the product of this algorithm.
+	 * <p>The the reductions and the transitions are the product of this algorithm.
 	 * The parse states can be discarded afterward, though they might be usable
 	 * for new improvements to the tables, such as error handling.
 	 */
@@ -245,9 +245,9 @@ public class TableBuilder {
 	}
 
 	/** Add a transition and its greatest priority to the list of paths.
-	 * Part of buildCanonicalCollection.
+	 * <p>Part of buildCanonicalCollection.
 	 *
-	 * The priority of a transition is determined by the 'priorities' of the
+	 * <p>The priority of a transition is determined by the 'priorities' of the
 	 * grammar.  Sometimes several of the same transition can have different
 	 * priorities, and it is important to record the highest priority of the
 	 * transition so that it can be correctly compared with the priority of
@@ -264,13 +264,13 @@ public class TableBuilder {
 	}
 
 	/** Caculate the next state reached from the current state after recognizing the given symbol.
-	 * Part of buildCanonicalCollection.
+	 * <p>Part of buildCanonicalCollection.
 	 *
-	 * This simply creates a new rule set and adds all rules which can be
+	 * <p>This simply creates a new rule set and adds all rules which can be
 	 * advanced by the given symbol.  A new instance of each matching rule is
 	 * creates with its 'position' advanced.
 	 *
-	 * The closure is also calculated, to include other rules which might now
+	 * <p>The closure is also calculated, to include other rules which might now
 	 * be reached.
 	 *
 	 * @param fromState The set of LR1 items in the current parse state
@@ -290,26 +290,26 @@ public class TableBuilder {
 	}
 
 	/** Calculate the closure of the current set of items, modifying the set.
-	 * This is a direct implementation of the Closure algorithm pseudocode
+	 * <p>This is a direct implementation of the Closure algorithm pseudocode
 	 * from the text.
 	 *
-	 * Conceptually, this function adds any new rules to the set which the
+	 * <p>Conceptually, this function adds any new rules to the set which the
 	 * parser could now be processing.  In other words, any nonterminal at the
 	 * current position of any rule means that all rules that reduce to that
 	 * nonterminal could also be reached from this state, and are thus at
 	 * 'position 0' in this state.
 	 *
-	 * Details:
+	 * <p>Details:<br/>
 	 * This function expands all possible nonterminal symbols in each LR1 item
 	 * which are at the placeholder using every rule for that nonterminal.
 	 * For each rule expanded, it then also expands leading nonterminal symbols.
 	 *
-	 * Along the way, it calculates all the possible lookahead terminals which
+	 * <p>Along the way, it calculates all the possible lookahead terminals which
 	 * could appear after an expansion of the rule.  At the end, it uses the
 	 * list of rules and their corresponding lookahead sets to create new LR1
 	 * items, which it adds to the itemSet, forming the closure.
 	 *
-	 * This algorithm depends on itemSet not starting with any productions with
+	 * <p>This algorithm depends on itemSet not starting with any productions with
 	 * a placeholder of zero.  This is always true because the only sets closure
 	 * is called on are generated by calcNextState, which only adds items if it
 	 * moves the placeholder.  The initial 'primer' item set is handled
@@ -340,7 +340,7 @@ public class TableBuilder {
 	}
 
 	/** Find any new options for rules expanded from this rule.
-	 * This is part of the 'closure' algorithm, moved to a separate function so
+	 * <p>This is part of the 'closure' algorithm, moved to a separate function so
 	 * that it could be called from two places.
 	 *
 	 * @param rule The current rule to expand a nonterminal of
@@ -379,10 +379,10 @@ public class TableBuilder {
 	}
 
 	/** Build the action and goto tables from the results of buildCanonicalCollection.
-	 * The inputs are the fields 'transitions' and 'reductions', generated by
+	 * <p>The inputs are the fields 'transitions' and 'reductions', generated by
 	 * buildCanonicalCollection.
 	 *
-	 * The algorithm simply adds all the entries to the tables and resolves
+	 * <p>The algorithm simply adds all the entries to the tables and resolves
 	 * conflicts by comparing priorities of the actions.
 	 *
 	 * @return A set of data representing the tables needed for an LR1 parse.
@@ -428,7 +428,7 @@ public class TableBuilder {
 	}
 
 	/** Set a cell of the parse table to the given action, if it has priority.
-	 * This routine compares the new action with any existing actions, and
+	 * <p>This routine compares the new action with any existing actions, and
 	 * either sets the table entry to the new action, ignores the new action,
 	 * or detects a conflict which it adds to the conflict set.
 	 *
@@ -503,7 +503,7 @@ public class TableBuilder {
 	 * <p>Title: LR1 Item
 	 * <p>Description: This class represents a parse rule with a position marker, and a set of lookahead symbols
 	 *
-	 * Instances of this class are immutable and can act as the key for a
+	 * <p>Instances of this class are immutable and can act as the key for a
 	 * hashtable.  They also support a deep-equals.  The toString method
 	 * generates notation similar to that used in the text.
 	 */
@@ -550,7 +550,7 @@ public class TableBuilder {
 	 * <p>Title: Item Set Entry</p>
 	 * <p>Description: Represents a parser state which is part of the Canonical Collection</p>
 	 *
-	 * The main purpose of this class is to associate an index with the set of
+	 * <p>The main purpose of this class is to associate an index with the set of
 	 * LR1 items.
 	 */
 	static final class ItemSetEntry {

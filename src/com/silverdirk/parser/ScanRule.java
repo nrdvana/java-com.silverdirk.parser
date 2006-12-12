@@ -8,21 +8,21 @@ import java.util.regex.*;
  * <p>Description: Essentially a robust wrapper around a regex representing the rule</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * Scan rule is a class that is meant to be subclasses to provide an "onMatch"
+ * <p>Scan rule is a class that is meant to be subclasses to provide an "onMatch"
  * action that performs actions like changing the state of the scanner,
  * incrementing the line number maintained by the scanner, and generating tokens
  * for use by the parser.
  *
- * As subclassing is somewhat annoying, ScanRule also has a number of
+ * <p>As subclassing is somewhat annoying, ScanRule also has a number of
  * parameters that let it do common tasks with the default 'onMatch' method.
  *
- * The 'target' parameter can be a Regex, a literal string, or a literal
+ * <p>The 'target' parameter can be a Regex, a literal string, or a literal
  * character.  If the scanner's next characters can match this target, then
  * the rule is activated.  the default action is to emit the token specified in
  * the constructor, and change the state of the parser to the state specified
  * in the constructor if it is greater than zero.
  *
- * The 'token' parameter can be either an actual token to return, or EMIT_MATCH
+ * <p>The 'token' parameter can be either an actual token to return, or EMIT_MATCH
  * to return the matched string, or EMIT_NOTHING to tell the scanner not to
  * generate a token from this rule.
  *

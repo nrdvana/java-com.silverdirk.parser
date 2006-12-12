@@ -9,16 +9,17 @@ import com.silverdirk.parser.LR1_Table.ParseAction;
  * <p>Description: Parsing engine driven by LR(1) tables</p>
  * <p>Copyright: Copyright (c) 2005-2006</p>
  *
- * This class is really just one function, 'parse', bound to a set of rules and
+ * <p>This class is really just one function, 'parse', bound to a set of rules and
  * an LR(1) table.  For further explanation, find a good book or website about
  * parsing, LL, LR, LR(1), or LALR.  This algorithm was implemented from the
  * description and pseudocode in
+ * <pre>
  *   Engineering a Compiler
  *   Keith D. Cooper & Linda Torczon
  *   Morgan Kaufmann Publishers, 2004
  *   ISBN: 1-55860-698-X
- *
- * Some ideas may also have been borrowed from the Java CUP project, which I
+ * </pre>
+ * <p>Some ideas may also have been borrowed from the Java CUP project, which I
  * used in Compiler Theory class, and whose source code I investigated.
  *
  * @author Michael Conrad
@@ -38,7 +39,7 @@ public class Parser {
 	}
 
 	/** Parse (non-debug).
-	 * This simply calls 'parse' with debug mode off.
+	 * <p>This simply calls 'parse' with debug mode off.
 	 *
 	 * @param input A source of tokens
 	 * @return An object describing the entire tree
@@ -49,7 +50,7 @@ public class Parser {
 	}
 
 	/** Parse (debug).
-	 * This simply calls 'parse' with debug mode on.
+	 * <p>This simply calls 'parse' with debug mode on.
 	 *
 	 * @param input A source of tokens
 	 * @return An object describing the entire tree
@@ -60,10 +61,10 @@ public class Parser {
 	}
 
 	/** Parse
-	 * This parses a token stream using the tables given to the constructor, and
+	 * <p>This parses a token stream using the tables given to the constructor, and
 	 * returns the root of the parse tree.
 	 *
-	 * It has an optional debugging mode, where GenericparseNodes are returned
+	 * <p>It has an optional debugging mode, where GenericparseNodes are returned
 	 * instead of running the user's code during a rule-reduce.
 	 *
 	 * @param input A source of tokens
@@ -139,13 +140,13 @@ public class Parser {
 	 * <p>Description: A class that record priority values for parse rules</p>
 	 * <p>Copyright: Copyright (c) 2006</p>
 	 *
-	 * Priorities of rules can't be determined by a simple mapping from rule to
+	 * <p>Priorities of rules can't be determined by a simple mapping from rule to
 	 * integer, because associativity is also needed.  All rules with the same
 	 * priority must have the same associativity.  Thus it made sense to define
 	 * "Priority Levels" which have a priority value and an associativity, and
 	 * map the rules to the level.
 	 *
-	 * The constructors of Priorities and PriorityLevel are designed so that
+	 * <p>The constructors of Priorities and PriorityLevel are designed so that
 	 * all rules and levels and associativity can be specified as a single
 	 * statement.  This makes it easy to define static priority objects.
 	 *
@@ -168,7 +169,7 @@ public class Parser {
 		 * <p>Description: A class containing the parameters for Priorities.set()</p>
 		 * <p>Copyright: Copyright (c) 2006-2007</p>
 		 *
-		 * This objects exists so that rules can be assigned to levels and
+		 * <p>This objects exists so that rules can be assigned to levels and
 		 * associativity in a single call to the constructor of Priorities.
 		 *
 		 * @author Michael Conrad
@@ -191,7 +192,7 @@ public class Parser {
 		}
 
 		/** Constructor.
-		 * Construct a mapping from all the rules contained in the priority
+		 * <p>Construct a mapping from all the rules contained in the priority
 		 * levels to the specified priority value and associativity.
 		 *
 		 * @param levels PriorityLevel[]

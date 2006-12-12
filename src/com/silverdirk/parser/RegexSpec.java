@@ -8,7 +8,7 @@ import java.util.*;
  * <p>Description: Object tree representing the components of a regex</p>
  * <p>Copyright: Copyright (c) 2006-2006</p>
  *
- * Soon to be used in the implementation of Scanner.
+ * <p>Soon to be used in the implementation of Scanner.
  *
  * @author Michael Conrad
  * @version $Revision$

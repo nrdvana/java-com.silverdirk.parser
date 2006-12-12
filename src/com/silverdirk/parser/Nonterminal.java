@@ -6,7 +6,7 @@ package com.silverdirk.parser;
  * <p>Description: An object representing a nonterminal symbol of a grammar</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * Nonterminals are unique immutable objects.  They simply act as keys for
+ * <p>Nonterminals are unique immutable objects.  They simply act as keys for
  * a large number of activities in the Parser and TableBuilder.
  *
  * @author Michael Conrad

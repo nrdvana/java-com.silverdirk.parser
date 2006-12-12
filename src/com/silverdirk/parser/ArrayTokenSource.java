@@ -27,7 +27,7 @@ public class ArrayTokenSource implements TokenSource {
 	}
 
 	/** Simplified constructor.
-	 * No context or source-location information will be available from this TokenSource.
+	 * <p>No context or source-location information will be available from this TokenSource.
 	 * @param tokens Object[] The values to return as tokens.
 	 */
 	public ArrayTokenSource(Object[] tokens) {
@@ -35,14 +35,14 @@ public class ArrayTokenSource implements TokenSource {
 	}
 
 	/** Rewind the current token back to element 0 of the array.
-	 * Call this function to use the tokenSource over form the beginning.
+	 * <p>Call this function to use the tokenSource over form the beginning.
 	 */
 	public void rewind() {
 		curPos= 0;
 	}
 
 	/** Get the current token.
-	 * Returns the current token, or TokenSource.EOF if no more tokens are available.
+	 * <p>Returns the current token, or TokenSource.EOF if no more tokens are available.
 	 * @return Object The object representation of the current token.
 	 */
 	public Object curToken() {
@@ -55,7 +55,7 @@ public class ArrayTokenSource implements TokenSource {
 	}
 
 	/** Get the source position where the current token was scanned.
-	 * If the positions given tot he constructor were null, this returns null.
+	 * <p>If the positions given tot he constructor were null, this returns null.
 	 *
 	 * @return SourcePos The coordinates describing the origin of the token, or null if none are available
 	 */
@@ -71,7 +71,7 @@ public class ArrayTokenSource implements TokenSource {
 	}
 
 	/** Get the context for the coordinates used in the SourcePos.
-	 * Returns the context given to the constructor.
+	 * <p>Returns the context given to the constructor.
 	 *
 	 * @return String The context which pos.charStart and pos.charEnd refer to, or null if this information is not known
 	 */
@@ -80,7 +80,7 @@ public class ArrayTokenSource implements TokenSource {
 	}
 
 	/** Advance to the next token.
-	 * If all tokens in the array have been used, returns TokenSource.EOF.
+	 * <p>If all tokens in the array have been used, returns TokenSource.EOF.
 	 *
 	 * @throws ParseException in the event of scanning trouble
 	 */

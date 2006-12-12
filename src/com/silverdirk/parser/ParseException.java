@@ -6,7 +6,7 @@ package com.silverdirk.parser;
  * <p>Description: Exception class that also holds context information</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * Used by both Parser and Scanner, this class contains an error message,
+ * <p>Used by both Parser and Scanner, this class contains an error message,
  * optional context string, optional parser state stack, optional list of
  * expected tokens, and optional source-location of the error.
  *
@@ -26,14 +26,14 @@ public class ParseException extends Exception {
 	}
 
 	/** Get the source-location where the error happened.
-	 * Might be null.
+	 * <p>Might be null.
 	 */
 	public SourcePos getLocation() {
 		return location;
 	}
 
 	/** Get the context string associated with this error.
-	 * Might be null.
+	 * <p>Might be null.
 	 */
 	public String getSource() {
 		return source;

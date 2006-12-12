@@ -9,11 +9,11 @@ import java.util.regex.*;
  * <p>Description: Holds a named set of scan rules representing the options for one state of the Scanner</p>
  * <p>Copyright: Copyright (c) 2004-2006</p>
  *
- * The implementation of this class is clumsy.  See comments at the top of
+ * <p>The implementation of this class is clumsy.  See comments at the top of
  * Scanner.java.  As I intend to destroy all the code in this file, I am not
  * going to document it further.
  *
- * After the rewrite, this class will hold a reference to parameters for a
+ * <p>After the rewrite, this class will hold a reference to parameters for a
  * regex engine, so that the scanner can plug the parameters and the current
  * input into the regex engine and come up with a sequence of rules to execute.
  *

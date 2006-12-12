@@ -8,7 +8,7 @@ import java.util.*;
  * <p>Description: Implementation of the Action and Goto tables needed for LR(1) parsing.</p>
  * <p>Copyright: Copyright (c) 2006</p>
  *
- * This particular implementation stores both "tables" in an array of hash
+ * <p>This particular implementation stores both "tables" in an array of hash
  * tables.  For a given row, the non-empty cells of the action table are stored
  * in the hash table keyed by a terminal symbol, and the non-empty cells of the
  * goto table are stored keyed by a nonterminal symbol.  This is an optimization
@@ -19,12 +19,12 @@ import java.util.*;
  * and then looking up the integers in the table would take longer than just
  * mapping them directly to actions and gotos.
  *
- * Another important aspect of this class is its ability to serialize to an
+ * <p>Another important aspect of this class is its ability to serialize to an
  * array of integers.  This allows a table to be re-used, however the list of
  * rules must still be provided to the constructor, and must be the exact same
  * list that was used to geenrate the table originally.
  *
- * There is a static "intArrayToJava" method which can produce text that can be
+ * <p>There is a static "intArrayToJava" method which can produce text that can be
  * pasted into a java source file.
  *
  * @author Michael Conrad
@@ -39,7 +39,7 @@ public class LR1_Table {
 	}
 
 	/** Constructor.
-	 * Create a LR(1) Table form the give Grammar, optionally writing debugging
+	 * <p>Create a LR(1) Table form the give Grammar, optionally writing debugging
 	 * information to a PrintStream.  This will run the LR(1) table construction
 	 * algorithm, and may fail and throw an Exception if the grammar contains
 	 * conflicts.
@@ -67,7 +67,7 @@ public class LR1_Table {
 	}
 
 	/** Constructor.
-	 * Create a LR(1) table for the specified grammar, but instead of
+	 * <p>Create a LR(1) table for the specified grammar, but instead of
 	 * generating the table, load its entries from serialized data.  This data
 	 * must have been serialized form a LR(1) table instance using the exact
 	 * same grammar and parse rules.
@@ -80,7 +80,7 @@ public class LR1_Table {
 	}
 
 	/** Constructor.
-	 * Create a LR(1) table for the specified parse rules, but instead of
+	 * <p>Create a LR(1) table for the specified parse rules, but instead of
 	 * generating the table, load its entries from serialized data.  This data
 	 * must have been serialized form a LR(1) table instance using the exact
 	 * same parse rules.
@@ -169,7 +169,7 @@ public class LR1_Table {
 	}
 
 	/** Build a list of all terminals and nonterminals used in the parse rules.
-	 * This function is used to form a mapping from integers to symbols so that
+	 * <p>This function is used to form a mapping from integers to symbols so that
 	 * the table can be serialized.
 	 *
 	 * @param rules ParseRule[] The list of parse rules used to generate this table
@@ -192,7 +192,7 @@ public class LR1_Table {
 	}
 
 	/** Buld a map from symbol to index-of-symbol.
-	 * This function is used to map a symbol to its index within the list.
+	 * <p>This function is used to map a symbol to its index within the list.
 	 *
 	 * @param array Object[] A deterministicly-ordered list of unique symbols
 	 * @return Map A map from each symbol to its index within the list
