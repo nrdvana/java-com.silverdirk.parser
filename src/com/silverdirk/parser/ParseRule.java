@@ -1,6 +1,5 @@
 package com.silverdirk.parser;
 
-import com.silverdirk.parser.Parser.ProductionHandler;
 import java.util.*;
 
 /**
@@ -17,10 +16,10 @@ import java.util.*;
  * @author Michael Conrad
  * @version $Revision$
  */
-public class ParseRule {
+public class ParseRule implements ReduceMethod {
 	Nonterminal target;
 	Object[] symbols;
-	ProductionHandler handler;
+	ReduceMethod handler;
 
 	/**
 	 * Create a parser production specifying that the target can be created
@@ -31,10 +30,10 @@ public class ParseRule {
 	 * @param symbols The specific values (or classes of values) which must be matched
 	 * @param handler The function whick converts the symbol values into an object representing the nonterminal
 	 */
-	public ParseRule(Nonterminal target, Object[] symbols, ProductionHandler handler) {
+	public ParseRule(Nonterminal target, Object[] symbols, ReduceMethod handler) {
 		this.target= target;
 		this.symbols= (Object[]) symbols.clone();
-		this.handler= handler == null? ParseRule.GenericHandler : handler;
+		this.handler= handler;
 	}
 
 	/**
@@ -68,8 +67,23 @@ public class ParseRule {
 	 * This function returns the function used to implement reductions based on this rule
 	 * @return a reference to the handler object
 	 */
-	public ProductionHandler getHandler() {
-		return handler;
+	public Object reduce(SourcePos from, Object[] symbols) {
+		if (handler != null)
+			return handler.reduce(this, from, symbols);
+		else
+			return new GenericParseNode(target, from, symbols);
+	}
+
+	/** Implementation of interface ReduceMethod.
+	 * <p>This allows ParseRules to be used as instances of ReduceMethod.
+	 *
+	 * @param rule ParseRule Ignored. This parse rule should not have expectations of which rule was processed
+	 * @param from SourcePos The area in the source where this rule is applying
+	 * @param symbols Object[] The symbols that were parsed according to this rule
+	 * @return Object An object representing the target of this rule
+	 */
+	public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
+		return reduce(from, symbols);
 	}
 
 	public String toString() {
@@ -82,102 +96,4 @@ public class ParseRule {
 				result.append(" '").append(symbols[i]).append("'");
 		return result.toString();
 	}
-
-	public static final ProductionHandler GenericHandler= new ProductionHandler() {
-		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
-			return new GenericParseNode(rule.target, from, symbols);
-		}
-	};
-
-	public static class PassthroughHandler implements ProductionHandler {
-		int fieldIdx;
-		public static final int ALL= -1;
-
-		public PassthroughHandler(int fieldIdx) {
-			this.fieldIdx= fieldIdx;
-		}
-		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
-			if (fieldIdx < 0)
-				return symbols;
-			else if (symbols.length > fieldIdx)
-				return symbols[fieldIdx];
-			else
-				return null;
-		}
-	}
-
-	public static class ElemChooseHandler implements ProductionHandler {
-		int[] elemIdxs;
-		public static final int EMPTY= -1;
-		public static final int REMAINDER= -2;
-
-		public ElemChooseHandler(int a) {
-			this.elemIdxs= new int[] { a };
-		}
-		public ElemChooseHandler(int a, int b) {
-			this.elemIdxs= new int[] { a, b };
-		}
-		public ElemChooseHandler(int a, int b, int c) {
-			this.elemIdxs= new int[] { a, b, c };
-		}
-		public ElemChooseHandler(int a, int b, int c, int d) {
-			this.elemIdxs= new int[] { a, b, c, d };
-		}
-		public ElemChooseHandler(int[] elems) {
-			this.elemIdxs= elems;
-		}
-		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
-			ArrayList result= new ArrayList(Math.max(elemIdxs.length, symbols.length));
-			for (int i=0; i<elemIdxs.length; i++) {
-				if (elemIdxs[i] == EMPTY)
-					result.add(null);
-				else if (elemIdxs[i] == REMAINDER) {
-					int fromIdx= (i == 0)? 0 : elemIdxs[i-1];
-					for (int j=fromIdx; j<symbols.length; j++)
-						result.add(symbols[j]);
-				}
-				else {
-					if (elemIdxs[i] > symbols.length)
-						result.add(null);
-					else
-						result.add(symbols[elemIdxs[i]]);
-				}
-			}
-			return new GenericParseNode(rule.getNonterminal(), from, result.toArray());
-		}
-	}
-
-	public static class ListBuildHandler implements ProductionHandler {
-		int listIdx, itemIdx;
-
-		public ListBuildHandler(int listIdx, int itemIdx) {
-			this.listIdx= listIdx;
-			this.itemIdx= itemIdx;
-		}
-		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
-			Object item= null;
-			List list= null;
-			if (symbols.length > listIdx) {
-				if (symbols[listIdx] instanceof List)
-					list= (List) symbols[listIdx];
-				else {
-					list= new LinkedList();
-					list.add(symbols[listIdx]);
-				}
-			}
-			if (symbols.length > itemIdx)
-				item= symbols[itemIdx];
-			if (list == null)
-				list= new LinkedList();
-			if (item != null) {
-				if (itemIdx > listIdx) list.add(item);
-				else list.add(0, item);
-			}
-			return list;
-		}
-	}
-
-	public static final ProductionHandler
-		FIRSTELEM_PASSTHROUGH= new PassthroughHandler(0),
-		ALL_PASSTHROUGH= new PassthroughHandler(-1);
 }

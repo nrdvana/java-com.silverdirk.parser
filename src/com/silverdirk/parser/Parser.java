@@ -121,7 +121,7 @@ public class Parser {
 					pos.charStart= st.pos.charStart;
 				}
 				Object data= debug? new GenericParseNode(rule.getNonterminal(), pos, symbols)
-					: rule.getHandler().reduce(rule, pos, symbols);
+					: rule.reduce(pos, symbols);
 				state= (ParseState) parseStack.peek();
 				int nextState= table.getStateTrans(state.id, rule.target);
 				parseStack.push(new ParseState(nextState, data, pos));
@@ -291,9 +291,5 @@ public class Parser {
 			this.data= data;
 			this.pos= pos;
 		}
-	}
-
-	public interface ProductionHandler {
-		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols);
 	}
 }

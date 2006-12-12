@@ -130,7 +130,7 @@ public class _TestParser extends TestCase {
 		assertEquals("<Expression>(<Expression>(5, +, <Expression>(3, *, 12)), +, <Expression>(1, *, <Expression>(8, -, 3)))", result.toString());
 	}
 
-	static final class SheepHandler implements Parser.ProductionHandler {
+	static final class SheepHandler implements ReduceMethod {
 		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
 			Vector result;
 			if (symbols.length > 1)
@@ -141,7 +141,7 @@ public class _TestParser extends TestCase {
 			return result;
 		}
 	}
-	static final class LRecSheepHandler implements Parser.ProductionHandler {
+	static final class LRecSheepHandler implements ReduceMethod {
 		public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
 			Vector result;
 			if (symbols.length > 1) {
