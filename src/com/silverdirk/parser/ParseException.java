@@ -13,7 +13,7 @@ package com.silverdirk.parser;
  * @author Michael Conrad
  * @version $Revision$
  */
-public class ParseException extends Exception {
+public class ParseException extends RuntimeException {
 	public ParseException(String msg, String source, SourcePos loc) {
 		this(msg, source, null, null, loc);
 	}
