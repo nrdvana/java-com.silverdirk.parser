@@ -28,6 +28,8 @@ public class SourcePos {
 	public int charStart, charEnd;
 
 	public String toString() {
-		return "line "+lineStart+":"+charStart+"-"+charEnd;
+		String lineStr= lineStart == lineEnd? ""+lineStart : ""+lineStart+"-"+lineEnd;
+		String colStr= charStart == charEnd? ""+charStart : ""+charStart+"-"+charEnd;
+		return "line "+lineStr+":"+colStr;
 	}
 }

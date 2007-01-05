@@ -49,7 +49,7 @@ public class Scanner implements TokenSource {
 	}
 
 	public SourcePos curTokenPos() {
-		return new SourcePos(lineNum, lastPos-lineStart+1, lineNum, pos-lineStart+1);
+		return new SourcePos(lineNum, lastPos-lineStart+1, lineNum, pos-lineStart);
 	}
 
 	public String getContext() {
