@@ -56,6 +56,7 @@ public class ParseRule implements ReduceMethod {
 	 */
 	public ParseRule(Nonterminal target, Object[] symbols) {
 		this(target, symbols, null);
+		this.handler= this;
 	}
 
 	/** Get the rule target,
@@ -85,10 +86,7 @@ public class ParseRule implements ReduceMethod {
 	 * @return Object An object representing the target of this rule
 	 */
 	public Object reduce(SourcePos from, Object[] symbols) {
-		if (handler != null)
-			return handler.reduce(this, from, symbols);
-		else
-			return new GenericParseNode(target, from, symbols);
+		return handler.reduce(this, from, symbols);
 	}
 
 	/** Implementation of interface ReduceMethod.
@@ -100,7 +98,7 @@ public class ParseRule implements ReduceMethod {
 	 * @return Object An object representing the target of this rule
 	 */
 	public Object reduce(ParseRule rule, SourcePos from, Object[] symbols) {
-		return reduce(from, symbols);
+		return new GenericParseNode(rule.target, from, symbols);
 	}
 
 	public String toString() {
