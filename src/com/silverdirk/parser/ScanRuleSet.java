@@ -21,90 +21,82 @@ import java.util.regex.*;
  * @version $Revision$
  */
 public class ScanRuleSet {
-	ScanRule[] rules;
-	char[] switchLookup; // a sorted array of characters indicating which list of rules should be used
-	int[][] switchBody; // the list of rules that should be processed for this character
-	int[] leftoverRegexes;
 	String stateName;
+	Pattern masterRegex;
+	ScanRule[] rules;
+	int[] ruleGroupIdx;
 
 	public ScanRuleSet(String name, ScanRule[] rules) {
-		this.rules= rules;
 		this.stateName= name;
-		buildSwitchTable();
+		this.rules= rules;
+		buildMasterRegex();
 	}
 
-	public ScanRule[] getRulesFor(CharSequence str) {
-		int[] a, b= leftoverRegexes;
-		if (switchLookup.length != 0) {
-			char firstChar= str.charAt(0);
-			int low= 0, high= switchLookup.length;
-			while (high-low > 1) {
-				int mid= (low+high)>>>1;
-				if (firstChar > switchLookup[mid])
-					low= mid;
-				else if (firstChar < switchLookup[mid])
-					high= mid;
-				else
-					low= high= mid;
-			}
-			int switchIdx= low;
-			a= switchBody[switchIdx];
-		}
-		else
-			a= new int[0];
-		// now merge the lists, on rule index (because rule order specifies precedence)
-		ScanRule[] result= new ScanRule[a.length+b.length];
-		int i= 0, aIdx=0, bIdx=0;
-		for (; aIdx<a.length && bIdx<b.length; i++)
-			if (a[aIdx] < b[bIdx])
-				result[i]= rules[a[aIdx++]];
-			else
-				result[i]= rules[b[bIdx++]];
-		if (aIdx >= a.length) {
-			aIdx= bIdx;
-			a= b;
-		}
-		for (int offset= aIdx-i; i<result.length; i++)
-			result[i]= rules[a[i+offset]];
-		return result;
-	}
-
-	private void buildSwitchTable() {
-		SortedMap charMap= new TreeMap();
-		ArrayList patterns= new ArrayList();
+	private void buildMasterRegex() {
+		ruleGroupIdx= new int[rules.length+1];
+		ruleGroupIdx[0]= 1;
+		StringBuffer sb= new StringBuffer("(");
 		for (int i=0; i<rules.length; i++) {
-			if (rules[i].matchTarget instanceof Pattern)
-				patterns.add(new Integer(i));
-			else if (rules[i].matchTarget instanceof String)
-				appendMatchFor(charMap, new Character(((String)rules[i].matchTarget).charAt(0)), i);
-			else if (rules[i].matchTarget instanceof Character)
-				appendMatchFor(charMap, (Character)rules[i].matchTarget, i);
-			else
-				throw new RuntimeException("Bug in ScanRuleSet");
+			Pattern p= Pattern.compile(rules[i].pattern);
+			Matcher m= p.matcher("");
+			if (m.lookingAt())
+				throw new RuntimeException("ScanRules must consume at least one character.  The pattern "+rules[i].pattern+" can match an empty string");
+			ruleGroupIdx[i+1]= ruleGroupIdx[i] + 1 + m.groupCount();
+			if (i != 0) sb.append(")|(");
+			sb.append(rules[i].pattern);
 		}
-		switchLookup= new char[charMap.size()];
-		switchBody= new int[charMap.size()][];
-		Iterator chars= charMap.entrySet().iterator();
-		for (int i=0; chars.hasNext(); i++) {
-			Map.Entry cur= (Map.Entry) chars.next();
-			switchLookup[i]= ((Character)cur.getKey()).charValue();
-			switchBody[i]= toIntArray((List) cur.getValue());
-		}
-		leftoverRegexes= toIntArray(patterns);
+		sb.append(')');
+		masterRegex= Pattern.compile(sb.toString());
+		// check for the condition of matching the empty string
+		Matcher m= masterRegex.matcher("");
+		if (m.lookingAt())
+			throw new RuntimeException("BUG: Somehow the master regex can match the empty string, though none of the components can");
+		if (m.groupCount() != ruleGroupIdx[rules.length]-1)
+			throw new RuntimeException("Unexpected number of groups");
 	}
-	private static void appendMatchFor(Map mapping, Character ch, int ruleIdx) {
-		List list= (List) mapping.get(ch);
-		if (list == null) {
-			list= new ArrayList();
-			mapping.put(ch, list);
+
+	static class ScanMatch {
+		int charsConsumed;
+		Object token;
+		public ScanMatch(Object token, int charsConsumed) {
+			this.token= token;
+			this.charsConsumed= charsConsumed;
 		}
-		list.add(new Integer(ruleIdx));
 	}
-	private int[] toIntArray(List list) {
-		int[] result= new int[list.size()];
-		Iterator item= list.iterator();
-		for (int i=0; item.hasNext(); i++)
-			result[i]= ((Integer)item.next()).intValue();
+
+	/** Attempt to match this rule against a characterSource, and return a match if successful.
+	 *
+	 * @param sender Scanner The scanner object calling this method
+	 * @param source CharSequence The character source to compare against
+	 * @return ScanMatch An object describing the match if successful, or null if no match was found
+	 */
+	ScanMatch getMatch(Scanner sender, CharSequence source) {
+		String text= null;
+		Object token= null;
+		int charsConsumed= 0;
+		try {
+			Matcher m= masterRegex.matcher(source);
+			if (m.lookingAt()) {
+				int rule= -1;
+				for (int i=0; rule == -1 && i<rules.length; i++)
+					if (m.start(ruleGroupIdx[i]) != -1)
+						rule= i;
+				String[] groups= collectGroups(m, ruleGroupIdx[rule], ruleGroupIdx[rule+1]);
+				token= rules[rule].onMatch(groups, sender);
+				charsConsumed= m.end();
+			}
+		}
+		catch (Exception ex) {
+			throw (ex instanceof RuntimeException)? (RuntimeException)ex : new RuntimeException(ex);
+		}
+		return charsConsumed == 0? null : new ScanMatch(token, charsConsumed);
+	}
+
+	String[] collectGroups(Matcher m, int from, int to) {
+		String[] result= new String[to-from+1];
+		result[0]= m.group();
+		for (int i=from; i<to; i++)
+			result[i-from+1]= m.group(i);
 		return result;
 	}
 }

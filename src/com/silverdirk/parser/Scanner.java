@@ -73,26 +73,20 @@ public class Scanner implements TokenSource {
 			}
 			ScanRuleSet curState= states[state];
 			CharSequence bufferTail= data.subSequence(pos, data.length());
-			ScanRule[] options= curState.getRulesFor(bufferTail);
-			boolean success= false;
-			for (int i=0; i<options.length; i++) {
-				ScanRule.ScanMatch match;
-				try {
-					match= options[i].getMatch(this, bufferTail);
-				}
-				catch (Exception ex) {
-					throw new ParseException(ex.getClass().getName()+": "+ex.getMessage(), getContext(), curTokenPos());
-				}
-				if (match != null) {
-					if (match.charsConsumed <= 0)
-						throw new RuntimeException("Error in spec: scan rule can potentially match empty string");
-					success= true;
-					token= match.token;
-					pos+= match.charsConsumed;
-					break;
-				}
+			ScanRuleSet.ScanMatch match;
+			try {
+				match= curState.getMatch(this, bufferTail);
 			}
-			if (!success)
+			catch (Exception ex) {
+				throw new ParseException(ex.getClass().getName()+": "+ex.getMessage(), getContext(), curTokenPos());
+			}
+			if (match != null) {
+				if (match.charsConsumed <= 0)
+					throw new RuntimeException("Error in spec: scan rule can potentially match empty string");
+				token= match.token;
+				pos+= match.charsConsumed;
+			}
+			else
 				throw new ParseException("Scan error while processing "+states[state].stateName, getContext(), curTokenPos());
 		}
 	}

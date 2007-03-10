@@ -4,21 +4,21 @@ import junit.framework.*;
 import java.util.regex.*;
 
 public class _TestScanner extends TestCase {
-	private Scanner scanner = null;
+	private Scanner scanner= null;
 	private ScanRule[] initialRules= new ScanRule[] {
-		new ScanRule(';'),
+		new ScanRule(";"),
 		new ScanRule("::"),
-		new ScanRule(':'),
-		new ScanRule('['),
-		new ScanRule(']'),
-		new ScanRule('('),
-		new ScanRule(')'),
-		new ScanRule("/*", null, 1),
-		new ScanRule(Pattern.compile("[0-9]+")),
-		new ScanRule(Pattern.compile("[A-Za-z_][A-Za-z0-9_]*"))
+		new ScanRule(":"),
+		new ScanRule("\\["),
+		new ScanRule("\\]"),
+		new ScanRule("\\("),
+		new ScanRule("\\)"),
+		new ScanRule("/\\*", null, 1),
+		new ScanRule("[0-9]+"),
+		new ScanRule("[A-Za-z_][A-Za-z0-9_]*")
 	},
 	commentRules= new ScanRule[] {
-		new ScanRule("*/", null, 0)
+		new ScanRule("\\*/", null, 0)
 	};
 	ScanRuleSet[] rulesets;
 
@@ -40,8 +40,8 @@ public class _TestScanner extends TestCase {
 	public void testSimpleRules() throws Exception {
 		String data= "abc[def]ghi;jkl:mno";
 		Object[]  expected= new Object[] {
-			"abc", new Character('['), "def", new Character(']'),
-			"ghi", new Character(';'), "jkl", new Character(':'),
+			"abc", "[", "def", "]",
+			"ghi", ";", "jkl", ":",
 			"mno", TokenSource.EOF
 		};
 		scanner= new Scanner(rulesets, data);
