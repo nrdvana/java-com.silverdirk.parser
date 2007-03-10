@@ -45,20 +45,37 @@ public class RegexParser {
 	}
 
 	public static final String escapeString(String literal) {
-		StringBuffer result= new StringBuffer(literal.length()+(literal.length()>>1));
-		char[] chars= literal.toCharArray();
-		for (int i=0; i<chars.length; i++) {
-			char ch= chars[i];
-			switch (ch) {
-			case '(': case ')': case '{': case '}':
-			case '*': case '+': case '?': case '.':
-			case '|': case '[': case ']': case '\\':
-				result.append('\\');
-			default:
-				result.append(ch);
+		boolean safe= true;
+		int i= 0;
+		int stop=literal.length();
+		for (; i<stop; i++)
+			if (needEsc(literal.charAt(i))) {
+				safe= false;
+				break;
 			}
+		if (safe)
+			return literal;
+		else {
+			StringBuffer ret= new StringBuffer((stop-i)*2);
+			ret.append(literal.substring(0, i));
+			for (; i<stop; i++) {
+				char ch= literal.charAt(i);
+				if (needEsc(ch))
+					ret.append('\\');
+				ret.append(ch);
+			}
+			return ret.toString();
 		}
-		return result.toString();
+	}
+	private static final boolean needEsc(char c) {
+		switch (c) {
+		case '(': case ')': case '{': case '}':
+		case '*': case '+': case '?': case '.':
+		case '|': case '[': case ']': case '\\':
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	// A quick and dirty LL(1) parser.. but the regex language is pretty simple.
