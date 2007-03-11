@@ -38,6 +38,8 @@ public class Scanner implements TokenSource {
 	 * @throws ParseException whever a token cannot be generated, or when no rules match the input
 	 */
 	public Scanner(ScanRuleSet[] stateRuleSets, CharSequence data) throws ParseException {
+		if (stateRuleSets == null || stateRuleSets.length < 1)
+			throw new IllegalArgumentException();
 		states= stateRuleSets;
 		stateData= new Object[states.length];
 		this.data= data;

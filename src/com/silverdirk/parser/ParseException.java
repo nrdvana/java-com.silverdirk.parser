@@ -89,7 +89,7 @@ public class ParseException extends RuntimeException {
 			int locEnd= location.charEnd-1;
 			int contextStart= Math.max(0, locStart-7);
 			int contextEnd= Math.min(Math.min(contextStart+70, locEnd+7), source.length());
-			msg.append(source.substring(contextStart, contextEnd-contextStart)).append('\n');
+			msg.append(source.substring(contextStart, contextEnd)).append('\n');
 			for (int i=contextStart; i<locStart; i++)
 				msg.append(' ');
 			msg.append('^');

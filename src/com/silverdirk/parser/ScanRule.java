@@ -55,6 +55,14 @@ public class ScanRule {
 		this(word, EMIT_MATCH);
 	}
 
+	public String getPattern() {
+		return pattern;
+	}
+
+	public Object getToken() {
+		return token;
+	}
+
 	public int getStateTransition() {
 		return stateTrans;
 	}

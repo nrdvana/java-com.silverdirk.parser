@@ -492,7 +492,7 @@ public class TableBuilder {
 	}
 
 	String getConflictString(ParseAction oldAcn, int oldPri, ParseAction newAcn, int newPri, Object lookahead) {
-		return ParseAction.ACTION_NAMES[oldAcn.type]+'/'
+		return ParseAction.ACTION_NAMES[newAcn.type]+'/'
 			+ParseAction.ACTION_NAMES[oldAcn.type]
 			+" error deciding between "+newAcn.toStringVerbose(rules, newPri)
 			+" and "+oldAcn.toStringVerbose(rules, oldPri)

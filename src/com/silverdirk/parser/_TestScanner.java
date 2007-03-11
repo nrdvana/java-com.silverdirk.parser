@@ -38,9 +38,9 @@ public class _TestScanner extends TestCase {
 	}
 
 	public void testSimpleRules() throws Exception {
-		String data= "abc[def]ghi;jkl:mno";
+		String data= "abc::[def]ghi;jkl:mno";
 		Object[]  expected= new Object[] {
-			"abc", "[", "def", "]",
+			"abc", "::", "[", "def", "]",
 			"ghi", ";", "jkl", ":",
 			"mno", TokenSource.EOF
 		};

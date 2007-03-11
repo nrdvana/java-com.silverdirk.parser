@@ -32,6 +32,15 @@ public class ScanRuleSet {
 		buildMasterRegex();
 	}
 
+	public String getName() {
+		return stateName;
+	}
+
+	public ScanRule[] getRules() {
+		// sadly, we can't trust the public, so we have to make a copy
+		return (ScanRule[]) rules.clone();
+	}
+
 	private void buildMasterRegex() {
 		ruleGroupIdx= new int[rules.length+1];
 		ruleGroupIdx[0]= 1;
@@ -92,7 +101,7 @@ public class ScanRuleSet {
 		return charsConsumed == 0? null : new ScanMatch(token, charsConsumed);
 	}
 
-	String[] collectGroups(Matcher m, int from, int to) {
+	static final String[] collectGroups(Matcher m, int from, int to) {
 		String[] result= new String[to-from+1];
 		result[0]= m.group();
 		for (int i=from; i<to; i++)
