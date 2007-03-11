@@ -1,0 +1,89 @@
+/*
+ I want to toss out a huge thank-you to Stu Nichols, author of http://cssplay.co.uk/
+ While I didn't end up using any of his examples directly, his huge variety of
+ clear-cut examples helped me decipher the mystery of hover-over css menus,
+ and uncover some of the crazy things that need to be done to get it to work
+ in a variety of browsers.
+
+ Also, I wasn't a fan of IE before, but now I thoroughly despise it ;-)
+ This is currently tested on IE6, Opera7&9, and Firefox, and there were a load of
+ nice CSS bits that I had to abandon thanks to IE's faulty rendering/alignment.
+*/
+
+html, body, div, form, pre, code, ul, ol {
+	margin:0;
+	padding:0;
+}
+html {
+	height:100%;
+}
+body {
+	height:100%;
+	background-color:black;
+	color:white;
+}
+
+#content {
+	min-height:100%;
+	margin:0;
+	padding:0;
+}
+* html body #content {
+	height:100%;
+}
+#roomForFooter {
+	height:4em;
+}
+#footer {
+	margin:-31px 0 0 0;
+	padding:0;
+}
+#footer .validate, #footer .validate * {
+	margin:0;
+	padding:0;
+	border:none;
+}
+
+textarea {
+	width:100%;
+}
+
+.content {
+	padding:2em 10% 0 10%;
+}
+
+.errordump {
+	color: #AFA;
+	background-color: #222;
+	list-style:none;
+	margin:0.2em;
+	padding:0;
+}
+.errordump li {
+	background-color: #444;
+	margin:2px;
+}
+.errordump li.errorline {
+	color: #FAA;
+	background-color: #844;
+}
+
+.scan-output span {
+	color: blue;
+	background-color: #777;
+	padding:1px;
+	border:1px solid white;
+}
+
+.tab-header input {
+	border:1px solid white;
+	color:white;
+	background-color:#77B;
+}
+.tab-header .tab-selected {
+	border-bottom:none;
+	background-color:black;
+}
+.parse-tree {
+	line-height:80%;
+}
