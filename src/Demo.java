@@ -27,6 +27,8 @@ public class Demo extends HttpServlet {
 		String parseRules;
 		String parseTableStr;
 		String input;
+		String exampleRequested;
+		boolean debug;
 
 		public Fields(HttpServletRequest req) {
 			state= State.edit;
@@ -47,6 +49,34 @@ public class Demo extends HttpServlet {
 			input= Util.trimPossibleNull(req.getParameter("Input"));
 			if (action != null)
 				state= action;
+			exampleRequested= req.getParameter("example");
+			if (exampleRequested != null) {
+				if (exampleRequested.equals("1")) {
+					scanRules= "ASSIGN =\n"
+						+"LPAREN  \\(\n"
+						+"RPAREN  \\)\n"
+						+"LBRAK  \\[\n"
+						+"RBRAK  \\]\n"
+						+"COMMA  ,\n"
+						+"IDENT  [A-Za-z_]\\w*\n"
+						+"NUMBR  \\d+\n"
+						+"NEWLN  \\r?\\n|\\r\n"
+						+"DOT    \\.\n"
+						+"   [ \\t]";
+					parseRules= "StmtList ::= Stmt NEWLN StmtList | Stmt |\n"
+						+"Stmt ::= Assign | Invoke\n"
+						+"Expr ::= Assign | ExprUnit\n"
+						+"#1:L Expr ::= Expr ADD Expr | Expr SUB Expr\n"
+						+"#2:L Expr ::= Expr MUL Expr | Expr DIV Expr\n"
+						+"ExprUnit ::= Invoke | ScopedExpr | SubscriptExpr | IDENT | NUMBR | LPAREN Expr RPAREN\n"
+						+"Assign ::= ExprUnit ASSIGN Expr\n"
+						+"Invoke ::= ExprUnit LPAREN List RPAREN\n"
+						+"ScopedExpr ::= ExprUnit DOT IDENT\n"
+						+"SubscriptExpr ::= ExprUnit LBRAK Expr RBRAK\n"
+						+"List ::= Expr COMMA List | Expr | Expr NEWLN | NEWLN List |";
+				}
+			}
+			debug= req.getParameter("debug") != null;
 		}
 	}
 
@@ -59,6 +89,8 @@ public class Demo extends HttpServlet {
 		try {
 			Fields fields= new Fields(req);
 			hgl.beginPage("Parser Demo", new String[] { "Page.css", "Widgets.css" });
+			if (fields.debug)
+				hgl.pDebugData();
 			hgl.p("\n<form action='index.html' method='post'><div class='content'>"
 				+"\n<input type='hidden' name='state' value='").p(fields.state.name()).p("'/>\n");
 			hgl.beginTabControl("action", tabNames, fields.state.ordinal(), 2);

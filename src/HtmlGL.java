@@ -42,7 +42,7 @@ public class HtmlGL {
 			}
 		}
 	}
-	private void debugData() {
+	void pDebugData() {
 		p("<!--");
 		try {
 			p("\nTime = "+System.currentTimeMillis());
@@ -193,7 +193,6 @@ public class HtmlGL {
 		p("</head>\n<body>\n");
 		p("<div id='content'>\n");
 		htmlTagOpen= true;
-		debugData();
 	}
 
 	public void endPage() {
