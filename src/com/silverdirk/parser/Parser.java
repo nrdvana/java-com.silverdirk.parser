@@ -74,28 +74,40 @@ public class Parser {
 	 */
 	public Object parse(TokenSource input, boolean debug) throws ParseException {
 		ParseState state;
+		ParseAction temp= ParseAction.MkReduce(0);
 		int symbol;
+		int stateCount= table.getStateCount();
 		Stack parseStack= new Stack();
 		parseStack.push(new ParseState(0, null, null));
 		Object nextTok= input.curToken();
 		while (true) {
 			state= (ParseState) parseStack.peek();
-			// Find the action for this token
-			ParseAction action= table.getAction(state.id, nextTok);
-			if (action == null) {
-				Class typ= nextTok.getClass();
-				do {
-					action= table.getAction(state.id, typ);
-					typ= typ.getSuperclass();
-				} while (action == null && typ != null);
+			ParseAction action;
+			// Check for "optimized" reduce actions
+			if (state.id >= stateCount) {
+				action= temp;
+				temp.rule= state.id - stateCount;
+			}
+			else {
+				// Find the action for this token
+				action= table.getAction(state.id, nextTok);
+				// If we didn't match the value, try matching the class
+				// (not speed-optimal, but very handy)
 				if (action == null) {
-					Object[] expectedSet= table.getOptions(state.id);
+					Class typ= nextTok.getClass();
+					do {
+						action= table.getAction(state.id, typ);
+						typ= typ.getSuperclass();
+					} while (action == null && typ != null);
+					if (action == null) {
+						Object[] expectedSet= table.getOptions(state.id);
 //					action= table.getErrAction(state.id, nextTok, expectedSet, input.curTokenPos());
 //					if (action == null)
-					throw new ParseException("Unexpected "+nextTok+" encountered",
-						input.getContext(),
-						(ParseState[]) parseStack.toArray(new ParseState[parseStack.size()]),
-						expectedSet, input.curTokenPos());
+						throw new ParseException("Unexpected "+nextTok+" encountered",
+							input.getContext(),
+							(ParseState[]) parseStack.toArray(new ParseState[parseStack.size()]),
+							expectedSet, input.curTokenPos());
+					}
 				}
 			}
 			switch (action.type) {

@@ -18,6 +18,11 @@ import com.silverdirk.parser.LR1_Table.ParseAction;
  *   Morgan Kaufmann Publishers, 2004
  *   ISBN: 1-55860-698-X
  * </pre>
+ * <p>I got the observation "This might lead to some illegal reductions. But it
+ * will not matter because the error will be caught ultimately before another
+ * shift can take place" from Satya Kiran Popuri's (very nice) writeup of Bison
+ * at http://cs.uic.edu/~spopuri/cparser.html
+ *
  * <p>Several parts have been 'tweaked' to get features I desired from a parser,
  * though they may have been invented by others prior to this.
  * (it is dangerous to 'innovate' in a heavily researched field ;-)
@@ -392,8 +397,8 @@ public class TableBuilder {
 		HashMap rulePrec= new HashMap();
 		Set conflicts= new HashSet();
 		Map acnPriMap= new HashMap();
-		Map[] actionTable= new Map[cc.size()];
-		Map[] gotoTable= new Map[cc.size()];
+		HashMap[] actionTable= new HashMap[cc.size()];
+		HashMap[] gotoTable= new HashMap[cc.size()];
 		int actionTableBuckets= nonterminals.size(); // number of hash buckets
 		int gotoTableBuckets= (terminals.size()/3)<<2;
 		for (int i=0; i<actionTable.length; i++) {
@@ -424,6 +429,7 @@ public class TableBuilder {
 		result.actionTable= actionTable;
 		result.gotoTable= gotoTable;
 		result.conflicts= (String[]) conflicts.toArray(new String[conflicts.size()]);
+		optimize(result);
 		return result;
 	}
 
@@ -497,6 +503,50 @@ public class TableBuilder {
 			+" error deciding between "+newAcn.toStringVerbose(rules, newPri)
 			+" and "+oldAcn.toStringVerbose(rules, oldPri)
 			+" with a lookahead of "+lookahead+".";
+	}
+
+	void optimize(Tables result) {
+		HashMap<Integer,Integer> reduceOnlyRows= new HashMap<Integer,Integer>();
+		int[] rowRemap= new int[result.actionTable.length];
+		rowRemap[0]= 0; // row 0 is not elligible
+		int newIdx= 1;
+		row_loop: for (int i=1; i<result.actionTable.length; i++) {
+			rowRemap[i]= newIdx++;
+			int reducRule= -1;
+			for (Map.Entry e: (Collection<Map.Entry>)result.actionTable[i].entrySet()) {
+				ParseAction acn= (ParseAction) e.getValue();
+				if (acn.type != ParseAction.REDUCE)
+					continue row_loop;
+				if (reducRule == -1)
+					reducRule= acn.rule;
+				else
+					if (reducRule != acn.rule)
+						continue row_loop;
+			}
+			// we have identified a row that has nothing but reductions for the same rule
+			reduceOnlyRows.put(i, reducRule);
+			newIdx--;
+		}
+		int newTableLen= newIdx;
+		Map[] newActions= new Map[newTableLen];
+		Map[] newGoto= new Map[newTableLen];
+		for (Map.Entry<Integer,Integer> e: reduceOnlyRows.entrySet())
+			rowRemap[e.getKey()]= newTableLen+e.getValue();
+		for (int i=0; i<result.actionTable.length; i++) {
+			int newRow= rowRemap[i];
+			if (newRow < newTableLen) {
+				newActions[newRow]= result.actionTable[i];
+				newGoto[newRow]= result.gotoTable[i];
+				for (Map.Entry e: (Collection<Map.Entry>)newActions[newRow].entrySet()) {
+					ParseAction acn= (ParseAction) e.getValue();
+					acn.nextState= rowRemap[acn.nextState];
+				}
+				for (Map.Entry e: (Collection<Map.Entry>)newGoto[newRow].entrySet())
+					e.setValue(rowRemap[(Integer)e.getValue()]);
+			}
+		}
+		result.actionTable= newActions;
+		result.gotoTable= newGoto;
 	}
 
 	/**

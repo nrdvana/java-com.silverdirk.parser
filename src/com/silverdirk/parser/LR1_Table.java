@@ -96,6 +96,10 @@ public class LR1_Table {
 			table[row]= deserializeTableRow(intToSymbol, tableEntries[row]);
 	}
 
+	public final int getStateCount() {
+		return table.length;
+	}
+
 	public String toString() {
 		StringBuffer sb= new StringBuffer();
 		for (int row=0; row<table.length; row++) {
@@ -110,6 +114,8 @@ public class LR1_Table {
 			}
 			sb.append("  | Goto: ").append(gotoTable).append('\n');
 		}
+		sb.append("Rows ").append(table.length).append("..").append(table.length+rules.length-1)
+			.append(": Reduce on rule 0..").append(rules.length-1).append('\n');
 		return sb.toString();
 	}
 
