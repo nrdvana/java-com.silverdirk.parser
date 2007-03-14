@@ -221,17 +221,17 @@ public class Demo extends HttpServlet {
 				}
 				hgl.pText("\n\t}),");
 			}
-			hgl.pText("\n};");
+			hgl.pText("\n};").p("</pre>");
 			hgl.endContentToggle();
 		}
 		hgl.p("\n<br/>"
 			+"\nParse Rules:");
 		Grammar g= null;
+		LR1_Table table= null;
 		try {
 			g= buildParseRules(fields.parseRules, terminals, nonterminals);
-			Parser p;
 			if (g.rules.length > 0)
-				p= new Parser(g);
+				table= new LR1_Table(g);
 		}
 		catch (UserException ex) {
 			ex.render(hgl);
@@ -269,6 +269,15 @@ public class Demo extends HttpServlet {
 				hgl.p("}),");
 			}
 			hgl.pText("\n};");
+			hgl.endContentToggle();
+		}
+		if (table != null) {
+			hgl.beginContentToggle("ParseTable", true);
+			hgl.beginContentSelectorButton("ParseTable", 1, false).p("Show parser table</a><br/>\n");
+			hgl.nextContentToggle("ParseTable", 1, false);
+			hgl.beginContentSelectorButton("ParseTable", 0, false).p("Hide</a>\n<pre>");
+			hgl.pText(table.toString());
+			hgl.p("</pre>");
 			hgl.endContentToggle();
 		}
 	}
