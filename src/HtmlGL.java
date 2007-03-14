@@ -273,12 +273,23 @@ public class HtmlGL {
 		}
 		else {
 			p("Internal error:\n<pre>");
-			pText(ex.getClass().getName());
-			String msg= ex.getMessage();
-			if (msg != null)
-				p(": ").pText(msg);
-			p("\n");
-			ex.printStackTrace(out);
+			Throwable t= ex;
+			while (t != null) {
+				pText(t.getClass().getName());
+				String msg= t.getMessage();
+				if (msg != null)
+					p(": ").pText(msg);
+				p("\n");
+				for (StackTraceElement elem: t.getStackTrace())
+					if ("javax.servlet.http.HttpServlet".equals(elem.getClassName()))
+						break;
+					else
+						p("   ").pText(elem.toString()).p("\n");
+				// guard against wierdness
+				if (t.getCause() == t)
+					break;
+				t= t.getCause();
+			}
 			p("</pre>\n");
 		}
 		endErrorMsg();
