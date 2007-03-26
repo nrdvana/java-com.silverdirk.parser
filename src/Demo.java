@@ -185,7 +185,21 @@ public class Demo extends HttpServlet {
 		NonterminalSet nonterminals= new NonterminalSet();
 		hgl.p("\n  <input type='hidden' name='Input' value='").pText(fields.input).p("'/>");
 
-		hgl.p("\nScan Rules:");
+		hgl.p("\nScan Rules:\n<br/>");
+		hgl.beginContentToggle("ScanRuleSyntax", true);
+		hgl.p("\n").beginContentSelectorButton("ScanRuleSyntax", 1, false).p("Help with scan rule syntax...</a>");
+		hgl.nextContentToggle("ScanRuleSyntax", 1, false);
+		hgl.p("\n").beginContentSelectorButton("ScanRuleSyntax", 0, false).p("Hide</a>");
+		hgl.p("<br/>\n").beginGroupBox("Scan Rule Syntax");
+		hgl.pText("syntax: [Terminal] <Pattern>")
+			.p("<br/>\n Where Nonterminal is a valid Java identifier, and Pattern is a Java-compatible regex. "
+			+"<br/>\n Use backslashes '\\' to escape regex chars, including '.' '[' ']' '(' ')' '$' '^' '*' '+' "
+			+"<br/>To specify patterns that should be discarded and not converted to a token (like whitespace) "
+			+"simply omit the Nonterminal.  i.e. start the line with a space followed by the regex. "
+			+"<br/>\nWhitespace characters between the regex and the nonterminal are ignored, so to start a "
+			+"regex with a space character you need to enclose it within '[' ']'");
+		hgl.endGroupBox();
+		hgl.endContentToggle();
 		ScanRuleSet[] scanRules= null;
 		try {
 			scanRules= buildScanRules(fields.scanRules, terminals);
@@ -198,7 +212,7 @@ public class Demo extends HttpServlet {
 		catch (UserException ex) {
 			ex.render(hgl);
 		}
-		hgl.p("\n<br/><textarea name='ScanRules' cols='60' rows='14'>").pText(fields.scanRules).p("\n</textarea><br/>");
+		hgl.p("<textarea name='ScanRules' cols='60' rows='14'>").pText(fields.scanRules).p("\n</textarea><br/>");
 		if (scanRules.length != 0) {
 			hgl.beginContentToggle("ScanSrc", true);
 			hgl.beginContentSelectorButton("ScanSrc", 1, false).p("Show java source</a><br/>\n");
@@ -225,7 +239,21 @@ public class Demo extends HttpServlet {
 			hgl.endContentToggle();
 		}
 		hgl.p("\n<br/>"
-			+"\nParse Rules:");
+			+"\nParse Rules:\n<br/>");
+		hgl.beginContentToggle("ParseRuleSyntax", true);
+		hgl.p("\n").beginContentSelectorButton("ParseRuleSyntax", 1, false).p("Help with parse rule syntax...</a>");
+		hgl.nextContentToggle("ParseRuleSyntax", 1, false);
+		hgl.p("\n").beginContentSelectorButton("ParseRuleSyntax", 0, false).p("Hide</a>");
+		hgl.p("<br/>\n").beginGroupBox("Parse Rule Syntax");
+		hgl.pText("syntax: [<Priority>(L|R|N)] <Nonterminal>::= [ (<Terminal>|<Nonterminal>)* [ '|' (<Terminal>|<Nonterminal>)* [ '|' ...]]*")
+			.p("<br/>\n Where Terminal is any name defined above in the scan rules, "
+			+"Nonterminal is any name not defined above in the scan rules, "
+			+"and Priority is an optional priority tag.  The priority "
+			+"number is used to resolve conflicts in the table, and the letter specifies "
+			+"the associativity of this priority level.  Higher numbers take precedence over lower numbers. "
+			+"Rules without a priority are considered \"unprioritized\" and generate conflicts for ambiguous situations. ");
+		hgl.endGroupBox();
+		hgl.endContentToggle();
 		Grammar g= null;
 		LR1_Table table= null;
 		try {
@@ -241,7 +269,7 @@ public class Demo extends HttpServlet {
 			hgl.p("<pre>").pText(Util.trimPossibleNull(ex.getMessage())).p("</pre>");
 			hgl.endErrorMsg();
 		}
-		hgl.p("\n<br/><textarea name='ParseRules' cols='60' rows='14'>").pText(fields.parseRules).p("\n</textarea><br/>"
+		hgl.p("<textarea name='ParseRules' cols='60' rows='14'>").pText(fields.parseRules).p("\n</textarea><br/>"
 			+"\n<br/>"
 			+"\n<input type='submit' value='Check' tabindex='1'/> "
 			+"<input type='reset' value='Reset' tabindex='2'/><br/>\n");
