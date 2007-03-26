@@ -66,8 +66,8 @@ public class Demo extends HttpServlet {
 					parseRules= "StmtList ::= Stmt NEWLN StmtList | Stmt |\n"
 						+"Stmt ::= Assign | Invoke\n"
 						+"Expr ::= Assign | ExprUnit\n"
-						+"#1:L Expr ::= Expr ADD Expr | Expr SUB Expr\n"
-						+"#2:L Expr ::= Expr MUL Expr | Expr DIV Expr\n"
+						+"1L Expr ::= Expr ADD Expr | Expr SUB Expr\n"
+						+"2L Expr ::= Expr MUL Expr | Expr DIV Expr\n"
 						+"ExprUnit ::= Invoke | ScopedExpr | SubscriptExpr | IDENT | NUMBR | LPAREN Expr RPAREN\n"
 						+"Assign ::= ExprUnit ASSIGN Expr\n"
 						+"Invoke ::= ExprUnit LPAREN List RPAREN\n"
@@ -405,7 +405,7 @@ public class Demo extends HttpServlet {
 		newlinePattern= Pattern.compile("\r?\n|\r"),
 		scanRulePattern= Pattern.compile("(\\w*)(->\\d+)?\\s+(.*)"),
 		scanStatePattern= Pattern.compile("---"),
-		parseRulePattern= Pattern.compile("(#(\\d+):([lLrRnN])\\s*)?(\\w+)\\s*::=((\\s*(\\w+|\\|))*)");
+		parseRulePattern= Pattern.compile("((\\d+)([lLrRnN])\\s*)?(\\w+)\\s*::=((\\s*(\\w+|\\|))*)");
 
 	static ScanRuleSet[] buildScanRules(String src, TerminalSet terminals) {
 		String[] lines= newlinePattern.split(src, -1);
