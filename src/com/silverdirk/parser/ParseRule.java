@@ -108,7 +108,7 @@ public class ParseRule implements ReduceMethod {
 			if (symbols[i] instanceof Nonterminal)
 				result.append(" ").append(symbols[i]);
 			else
-				result.append(" '").append(symbols[i]).append("'");
+				result.append(" ").append(symbols[i]);
 		return result.toString();
 	}
 }
