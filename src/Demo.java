@@ -304,6 +304,14 @@ public class Demo extends HttpServlet {
 			hgl.beginContentSelectorButton("ParseTable", 1, false).p("Show parser table</a><br/>\n");
 			hgl.nextContentToggle("ParseTable", 1, false);
 			hgl.beginContentSelectorButton("ParseTable", 0, false).p("Hide</a>\n<pre>");
+			hgl.p("Expanded parse rules:\n");
+			int cols= 0;
+			for (int i=g.rules.length; i!=0; i/=10)
+				cols++;
+			String fmt= "%1$"+cols+"d: %2$s\n";
+			for (int i=0; i<g.rules.length; i++)
+				hgl.p(String.format(fmt, new Object[] { i, hgl.esc(g.rules[i].toString()) } ));
+			hgl.p("\nTable:\n");
 			hgl.pText(table.toString());
 			hgl.p("</pre>");
 			hgl.endContentToggle();
