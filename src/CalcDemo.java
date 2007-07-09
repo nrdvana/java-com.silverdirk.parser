@@ -8,8 +8,8 @@ import java.io.*;
 
 /**
  * <p>Project: Parser Demo</p>
- * <p>Title: Main ParseDemo Class</p>
- * <p>Description: Implements a simple arithmetic grammar and command line.</p>
+ * <p>Title: Simple calculator demo</p>
+ * <p>Description: Implements a simple arithmetic grammar and command line, and the functions of a calculator.</p>
  * <p>Copyright Copyright (c) 2006-2007</p>
  *
  * @author Michael Conrad / TheSilverDirk

@@ -5,11 +5,8 @@ import com.silverdirk.parser.*;
 
 /**
  * <p>Project: Parser Demo</p>
- *
- * <p>Title: </p>
- *
- * <p>Description: </p>
- *
+ * <p>Title: Scanner demonstration</p>
+ * <p>Description: Shows how a set of scanner rules can break the input into tokens</p>
  * <p>Copyright Copyright (c) 2006-2007</p>
  *
  * @author Michael Conrad / TheSilverDirk

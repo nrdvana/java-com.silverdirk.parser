@@ -7,8 +7,8 @@ import java.io.*;
 
 /**
  * <p>Project: Parser Demo</p>
- * <p>Title: Main ParseDemo Class</p>
- * <p>Description: Implements a simple arithmetic grammar and command line.</p>
+ * <p>Title: Arithmetic grammar parse demo</p>
+ * <p>Description: Implements a simple arithmetic grammar and command line, and displays parse trees for the input</p>
  * <p>Copyright Copyright (c) 2006-2007</p>
  *
  * @author Michael Conrad / TheSilverDirk
