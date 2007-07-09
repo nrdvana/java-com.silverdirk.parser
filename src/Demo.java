@@ -63,17 +63,17 @@ public class Demo extends HttpServlet {
 						+"NEWLN  \\r?\\n|\\r\n"
 						+"DOT    \\.\n"
 						+"   [ \\t]";
-					parseRules= "StmtList ::= Stmt NEWLN StmtList | Stmt |\n"
-						+"Stmt ::= Assign | Invoke\n"
-						+"Expr ::= Assign | ExprUnit\n"
-						+"1L Expr ::= Expr ADD Expr | Expr SUB Expr\n"
-						+"2L Expr ::= Expr MUL Expr | Expr DIV Expr\n"
-						+"ExprUnit ::= Invoke | ScopedExpr | SubscriptExpr | IDENT | NUMBR | LPAREN Expr RPAREN\n"
-						+"Assign ::= ExprUnit ASSIGN Expr\n"
-						+"Invoke ::= ExprUnit LPAREN List RPAREN\n"
-						+"ScopedExpr ::= ExprUnit DOT IDENT\n"
-						+"SubscriptExpr ::= ExprUnit LBRAK Expr RBRAK\n"
-						+"List ::= Expr COMMA List | Expr | Expr NEWLN | NEWLN List |";
+					parseRules= "StmtList -> Stmt NEWLN StmtList | Stmt |\n"
+						+"Stmt -> Assign | Invoke\n"
+						+"Expr -> Assign | ExprUnit\n"
+						+"1L Expr -> Expr ADD Expr | Expr SUB Expr\n"
+						+"2L Expr -> Expr MUL Expr | Expr DIV Expr\n"
+						+"ExprUnit -> Invoke | ScopedExpr | SubscriptExpr | IDENT | NUMBR | LPAREN Expr RPAREN\n"
+						+"Assign -> ExprUnit ASSIGN Expr\n"
+						+"Invoke -> ExprUnit LPAREN List RPAREN\n"
+						+"ScopedExpr -> ExprUnit DOT IDENT\n"
+						+"SubscriptExpr -> ExprUnit LBRAK Expr RBRAK\n"
+						+"List -> Expr COMMA List | Expr | Expr NEWLN | NEWLN List |";
 				}
 			}
 			debug= req.getParameter("debug") != null;
@@ -191,13 +191,20 @@ public class Demo extends HttpServlet {
 		hgl.nextContentToggle("ScanRuleSyntax", 1, false);
 		hgl.p("\n").beginContentSelectorButton("ScanRuleSyntax", 0, false).p("Hide</a>");
 		hgl.p("<br/>\n").beginGroupBox("Scan Rule Syntax");
-		hgl.pText("syntax: [Terminal] <Pattern>")
-			.p("<br/>\n Where Nonterminal is a valid Java identifier, and Pattern is a Java-compatible regex. "
+		hgl.p("<pre>").pText("Rule -> Name ' ' Pattern | ' ' Pattern\n").p("</pre>")
+			.p("<br/>\n Where Terminal is a valid Java identifier, and Pattern is a Java-compatible regex. "
 			+"<br/>\n Use backslashes '\\' to escape regex chars, including '.' '[' ']' '(' ')' '$' '^' '*' '+' "
 			+"<br/>To specify patterns that should be discarded and not converted to a token (like whitespace) "
-			+"simply omit the Nonterminal.  i.e. start the line with a space followed by the regex. "
+			+"simply omit the Terminal name.  i.e. start the line with a space followed by the regex. "
 			+"<br/>\nWhitespace characters between the regex and the nonterminal are ignored, so to start a "
 			+"regex with a space character you need to enclose it within '[' ']'");
+		hgl.endGroupBox();
+		hgl.beginGroupBox("Example");
+		hgl.p("<pre>").pText("INT [0-9]+\n"
+			+"SEMI ;\n"
+			+"COMMA ,\n"
+			+"LPAREN \\(\n")
+			.p("</pre>");
 		hgl.endGroupBox();
 		hgl.endContentToggle();
 		ScanRuleSet[] scanRules= null;
@@ -245,13 +252,20 @@ public class Demo extends HttpServlet {
 		hgl.nextContentToggle("ParseRuleSyntax", 1, false);
 		hgl.p("\n").beginContentSelectorButton("ParseRuleSyntax", 0, false).p("Hide</a>");
 		hgl.p("<br/>\n").beginGroupBox("Parse Rule Syntax");
-		hgl.pText("syntax: [<Priority>(L|R|N)] <Nonterminal>::= [ (<Terminal>|<Nonterminal>)* [ '|' (<Terminal>|<Nonterminal>)* [ '|' ...]]*")
-			.p("<br/>\n Where Terminal is any name defined above in the scan rules, "
+		hgl.p("<pre>").pText("Rule -> Priority Nonterminal '->' List\n"
+			+"Priority -> Value'L' | Value'R' | Value'N' |\n"
+			+"List -> Sequence | List '|' Sequence\n"
+			+"Sequence -> Sequence Nonterminal | Sequence terminal |\n"
+			).p("</pre><br/>\n Where Terminal is any name defined above in the scan rules, "
 			+"Nonterminal is any name not defined above in the scan rules, "
-			+"and Priority is an optional priority tag.  The priority "
-			+"number is used to resolve conflicts in the table, and the letter specifies "
+			+"and Priority is an optional priority tag composed of a number and a letter."
+			+"The priority number is used to resolve conflicts in the table, and the letter specifies "
 			+"the associativity of this priority level.  Higher numbers take precedence over lower numbers. "
-			+"Rules without a priority are considered \"unprioritized\" and generate conflicts for ambiguous situations. ");
+			+"Rules without a priority are considered \"unprioritized\" and generate conflicts for ambiguous situations."
+			+"<br/><br/>Note that you can't actually use string literals in the parse rules like I just did.");
+		hgl.endGroupBox();
+		hgl.beginGroupBox("Example");
+		hgl.p("<pre>").pText("A -> B C D | E B F |\nB -> x y A\nB -> x y\n").p("</pre>");
 		hgl.endGroupBox();
 		hgl.endContentToggle();
 		Grammar g= null;
@@ -441,7 +455,7 @@ public class Demo extends HttpServlet {
 		newlinePattern= Pattern.compile("\r?\n|\r"),
 		scanRulePattern= Pattern.compile("(\\w*)(->\\d+)?\\s+(.*)"),
 		scanStatePattern= Pattern.compile("---"),
-		parseRulePattern= Pattern.compile("((\\d+)([lLrRnN])\\s*)?(\\w+)\\s*::=((\\s*(\\w+|\\|))*)");
+		parseRulePattern= Pattern.compile("((\\d+)([lLrRnN])\\s*)?(\\w+)\\s*->((\\s*(\\w+|\\|))*)");
 
 	static ScanRuleSet[] buildScanRules(String src, TerminalSet terminals) {
 		String[] lines= newlinePattern.split(src, -1);
